@@ -1,0 +1,32 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# tool caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+*~
+.nfs*
+
+# data, checkpoints and experiment outputs
+workspace
+wandb/
+*.pth
+*.pt
+
+# logs and crash dumps
+*.log
+*.out
+core

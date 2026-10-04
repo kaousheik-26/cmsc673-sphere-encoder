@@ -1,0 +1,12 @@
+torch
+torchvision
+transformers
+datasets
+tabulate
+timm
+tqdm
+fvcore
+einops
+wandb
+matplotlib
+git+https://github.com/LTH14/torch-fidelity.git@master
