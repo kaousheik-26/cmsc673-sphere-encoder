@@ -1,0 +1,143 @@
+{
+ "config": {
+  "model": "large-fdlite-256",
+  "decoder_ckpt": "",
+  "schedule": [
+   75.0,
+   45.0,
+   25.0
+  ],
+  "lam": 1.0,
+  "hard_paste": false,
+  "prefill": "nn",
+  "prefill_hull": true,
+  "hygiene": true,
+  "clean_alpha": -1.0,
+  "class_mode": "null",
+  "share_e": true,
+  "depth_source": "moge",
+  "step_deg": 15.0,
+  "order": "alternate",
+  "final_sweeps": 0,
+  "sweep_schedule": [
+   25,
+   25
+  ],
+  "sweep_lam": 1.0,
+  "gs_iters": 2000,
+  "gs_sh": 1,
+  "gs_lpips": 0.0,
+  "fg_thresh": 0.08,
+  "bg_margin": 8,
+  "new_px_hull_dilate": 6,
+  "pc_edge_thresh": 0.04,
+  "pc_erode": 2,
+  "depth_fusion": "harmonic",
+  "save_views": false,
+  "depth_scale": "geo_q90_aabb",
+  "seed": 0,
+  "color_match": false,
+  "latent_refine_steps": 0,
+  "latent_refine_lr": 0.01,
+  "latent_refine_mu": 1.0,
+  "latent_refine_hole_w": 0.3,
+  "final_paste": "none",
+  "feather_px": 3.0
+ },
+ "summary": {
+  "views": {
+   "psnr": 15.858652114868164,
+   "ssim": 0.7217820882797241,
+   "lpips_vgg": 0.2823445796966553,
+   "psnr_masked": 12.025276184082031,
+   "ssim_masked": 0.36918187141418457,
+   "lpips_vgg_masked": 0.1805884838104248
+  },
+  "gs_interleaved": {
+   "psnr": 16.95885467529297,
+   "ssim": 0.750476598739624,
+   "lpips_vgg": 0.2516791820526123,
+   "psnr_masked": 13.167997360229492,
+   "ssim_masked": 0.4281308650970459,
+   "lpips_vgg_masked": 0.15985989570617676
+  },
+  "gs_extrapolated": {
+   "psnr": 11.079036712646484,
+   "ssim": 0.6818371415138245,
+   "lpips_vgg": 0.374309778213501,
+   "psnr_masked": 6.3259758949279785,
+   "ssim_masked": 0.23853300511837006,
+   "lpips_vgg_masked": 0.27083131670951843
+  },
+  "gs_gt_interleaved": {
+   "psnr": 36.315032958984375,
+   "ssim": 0.9911152720451355,
+   "lpips_vgg": 0.009287154302001,
+   "psnr_masked": 33.37172317504883,
+   "ssim_masked": 0.9777492880821228,
+   "lpips_vgg_masked": 0.00707707554101944
+  },
+  "gs_gt_extrapolated": {
+   "psnr": 16.680463790893555,
+   "ssim": 0.8381933569908142,
+   "lpips_vgg": 0.1552765667438507,
+   "psnr_masked": 11.787354469299316,
+   "ssim_masked": 0.5419911742210388,
+   "lpips_vgg_masked": 0.1510608047246933
+  },
+  "scene_seconds": 4.053499937057495
+ },
+ "per_object": {
+  "toaster": {
+   "views": {
+    "psnr": 15.858652114868164,
+    "ssim": 0.7217820882797241,
+    "lpips_vgg": 0.2823445796966553,
+    "psnr_masked": 12.025276184082031,
+    "ssim_masked": 0.36918187141418457,
+    "lpips_vgg_masked": 0.1805884838104248
+   },
+   "gs": {
+    "interleaved": {
+     "psnr": 16.95885467529297,
+     "ssim": 0.750476598739624,
+     "lpips_vgg": 0.2516791820526123,
+     "psnr_masked": 13.167997360229492,
+     "ssim_masked": 0.4281308650970459,
+     "lpips_vgg_masked": 0.15985989570617676
+    },
+    "extrapolated": {
+     "psnr": 11.079036712646484,
+     "ssim": 0.6818371415138245,
+     "lpips_vgg": 0.374309778213501,
+     "psnr_masked": 6.3259758949279785,
+     "ssim_masked": 0.23853300511837006,
+     "lpips_vgg_masked": 0.27083131670951843
+    },
+    "gt_interleaved": {
+     "psnr": 36.315032958984375,
+     "ssim": 0.9911152720451355,
+     "lpips_vgg": 0.009287154302001,
+     "psnr_masked": 33.37172317504883,
+     "ssim_masked": 0.9777492880821228,
+     "lpips_vgg_masked": 0.00707707554101944
+    },
+    "gt_extrapolated": {
+     "psnr": 16.680463790893555,
+     "ssim": 0.8381933569908142,
+     "lpips_vgg": 0.1552765667438507,
+     "psnr_masked": 11.787354469299316,
+     "ssim_masked": 0.5419911742210388,
+     "lpips_vgg_masked": 0.1510608047246933
+    }
+   },
+   "info": {
+    "gen_seconds": 3.543241500854492,
+    "n_points": 42528,
+    "scene_seconds": 4.053499937057495
+   },
+   "n_interleaved": 12,
+   "n_extrapolated": 15
+  }
+ }
+}

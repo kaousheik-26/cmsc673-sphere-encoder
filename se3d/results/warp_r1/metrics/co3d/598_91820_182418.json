@@ -1,0 +1,80 @@
+{
+ "protocol": "co3d",
+ "config": {
+  "model": "large-fdlite-256",
+  "decoder_ckpt": "",
+  "schedule": [
+   75,
+   45,
+   25
+  ],
+  "lam": 1.0,
+  "hard_paste": false,
+  "prefill": "nn",
+  "prefill_hull": true,
+  "hygiene": true,
+  "clean_alpha": -1.0,
+  "class_mode": "null",
+  "share_e": true,
+  "depth_source": "moge",
+  "step_deg": 15.0,
+  "order": "alternate",
+  "final_sweeps": 0,
+  "sweep_schedule": [
+   25,
+   25
+  ],
+  "sweep_lam": 1.0,
+  "gs_iters": 2000,
+  "fg_thresh": 0.08,
+  "bg_margin": 8,
+  "new_px_hull_dilate": 6,
+  "pc_edge_thresh": 0.04,
+  "pc_erode": 2,
+  "depth_fusion": "harmonic",
+  "save_views": false,
+  "depth_scale": "geo_q90_aabb",
+  "seed": 0,
+  "color_match": false,
+  "latent_refine_steps": 0,
+  "latent_refine_lr": 0.01,
+  "latent_refine_mu": 1.0,
+  "latent_refine_hole_w": 0.3,
+  "final_paste": "none",
+  "feather_px": 3.0
+ },
+ "summary": {
+  "psnr": 12.796439170837402,
+  "ssim": 0.6864678263664246,
+  "lpips_vgg": 0.35363349318504333,
+  "psnr_masked": 10.556476593017578,
+  "ssim_masked": 0.2689608931541443,
+  "lpips_vgg_masked": 0.21240969002246857,
+  "seconds": 1.9815361499786377
+ },
+ "per_object": {
+  "598_91820_182418": {
+   "psnr": 12.796439170837402,
+   "ssim": 0.6864678263664246,
+   "lpips_vgg": 0.35363349318504333,
+   "psnr_masked": 10.556476593017578,
+   "ssim_masked": 0.2689608931541443,
+   "lpips_vgg_masked": 0.21240969002246857,
+   "per_view_lpips": [
+    0.2499479353427887,
+    0.2789275050163269,
+    0.34342706203460693,
+    0.42900940775871277,
+    0.4665716290473938
+   ],
+   "angles": [
+    18.76977392731255,
+    28.272913879294034,
+    43.92338110958527,
+    64.74159424050725,
+    90.94913266899181
+   ],
+   "seconds": 1.9815361499786377
+  }
+ }
+}
