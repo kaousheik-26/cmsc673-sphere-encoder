@@ -1,3 +1,7 @@
+## Working code for CMSC673 Capstone in Machine Learning
+All team members have a separate branch (dev-<member_name>), making progress on different threads of the same project parallely.
+
+
 ## Sphere Encoder 2
 
 ### Installation
