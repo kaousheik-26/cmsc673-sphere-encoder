@@ -1,0 +1,72 @@
+[
+  {
+    "idx": 0,
+    "label": "golden_retriever",
+    "class_id": 535,
+    "article": "Golden Retriever",
+    "input": "samples/inputs/00_golden_retriever.jpg"
+  },
+  {
+    "idx": 1,
+    "label": "tabby",
+    "class_id": 384,
+    "article": "Tabby cat",
+    "input": "samples/inputs/01_tabby.jpg"
+  },
+  {
+    "idx": 2,
+    "label": "zebra",
+    "class_id": 923,
+    "article": "Zebra",
+    "input": "samples/inputs/02_zebra.jpg"
+  },
+  {
+    "idx": 3,
+    "label": "lion",
+    "class_id": 294,
+    "article": "Lion",
+    "input": "samples/inputs/03_lion.jpg"
+  },
+  {
+    "idx": 4,
+    "label": "giant_panda",
+    "class_id": 976,
+    "article": "Giant panda",
+    "input": "samples/inputs/04_giant_panda.jpg"
+  },
+  {
+    "idx": 5,
+    "label": "flamingo",
+    "class_id": 792,
+    "article": "Flamingo",
+    "input": "samples/inputs/05_flamingo.jpg"
+  },
+  {
+    "idx": 6,
+    "label": "king_penguin",
+    "class_id": 926,
+    "article": "King penguin",
+    "input": "samples/inputs/06_king_penguin.jpg"
+  },
+  {
+    "idx": 7,
+    "label": "red_fox",
+    "class_id": 585,
+    "article": "Red fox",
+    "input": "samples/inputs/07_red_fox.jpg"
+  },
+  {
+    "idx": 8,
+    "label": "Siberian_husky",
+    "class_id": 909,
+    "article": "Siberian Husky",
+    "input": "samples/inputs/08_Siberian_husky.jpg"
+  },
+  {
+    "idx": 9,
+    "label": "peacock",
+    "class_id": 761,
+    "article": "Indian peafowl",
+    "input": "samples/inputs/09_peacock.jpg"
+  }
+]
