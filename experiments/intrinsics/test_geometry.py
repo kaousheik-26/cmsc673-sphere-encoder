@@ -1,3 +1,4 @@
+# Check the sphere mathematics with synthetic tensors whose invariants are known.
 import pytest
 import torch
 
@@ -5,6 +6,7 @@ from experiments.intrinsics.geometry import (
     geodesic_move, normalize, normalized_addition, project_tangent,
 )
 
+# Check normalization, tangent orthogonality, movement angles, and radius preservation.
 @pytest.mark.parametrize("mode,shape,dims", [
     ("global", (3, 5, 7), (1, 2)),
     ("global", (3, 2, 4, 5), (1, 2, 3)),
@@ -30,6 +32,7 @@ def test_spherical_invariants(mode, shape, dims):
     torch.testing.assert_close(geodesic_move(short, direction, 40, mode).square().sum(dims), short.square().sum(dims))
 
 
+# Check zero or parallel directions and per-image/per-token angle broadcasting.
 @pytest.mark.parametrize("mode", ["global", "local"])
 def test_degenerate_and_batched_angles(mode):
     z = normalize(torch.randn(3, 5, 7), mode)
@@ -44,6 +47,7 @@ def test_degenerate_and_batched_angles(mode):
         torch.testing.assert_close(geodesic_move(z, direction, angles[:, None].expand(3, 5), mode), moved)
 
 
+# Check that supported numeric precisions produce finite outputs with the original dtype.
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32, torch.float64])
 def test_dtype_and_finite_outputs(dtype):
     z = normalize(torch.randn(2, 4, 8).to(dtype))
@@ -53,6 +57,7 @@ def test_dtype_and_finite_outputs(dtype):
     torch.testing.assert_close(moved.float().norm(dim=(1, 2)), z.float().norm(dim=(1, 2)), atol=0.04, rtol=0.005)
 
 
+# Check that undefined sphere inputs and nonfinite values are rejected.
 def test_invalid_inputs():
     z = torch.ones(2, 3, 4)
     for invalid in [torch.zeros_like(z), torch.full_like(z, float("nan")), z.long()]:
@@ -70,6 +75,7 @@ def test_invalid_inputs():
         project_tangent(z, torch.full_like(z, float("nan")))
 
 
+# Check that gradients can pass through geodesic movement during edit training.
 @pytest.mark.parametrize("mode", ["global", "local"])
 def test_gradients(mode):
     torch.manual_seed(673)
@@ -80,6 +86,7 @@ def test_gradients(mode):
     assert torch.autograd.gradcheck(lambda u: normalized_addition(z, u, mode=mode), (direction,))
 
 
+# Verify that tangent addition with tan(angle) matches the corresponding geodesic move.
 @pytest.mark.parametrize("mode", ["global", "local"])
 def test_matched_tangent_addition_baseline(mode):
     """A tangent offset scaled by tan(angle) matches a geodesic below 90deg."""

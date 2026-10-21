@@ -1,3 +1,4 @@
+# Check whether the frozen encoder and decoder can reconstruct teacher depth maps.
 
 import argparse
 import importlib
@@ -7,6 +8,7 @@ from pathlib import Path
 import torch
 
 
+# Normalize teacher depth by its 1st and 99th percentiles and repeat it into three channels.
 def depth_to_target(raw):
 
     raw = raw.float()
@@ -36,6 +38,7 @@ def similarity(prediction, target):
     }
 
 
+# Generate teacher targets, reconstruct RGB and depth, and save comparisons and metrics.
 @torch.no_grad()
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

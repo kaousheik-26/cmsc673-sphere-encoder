@@ -1,9 +1,11 @@
+# Check depth normalization and reconstruction metrics without loading a checkpoint.
 import pytest
 import torch
 
 from experiments.intrinsics.depth_feasibility import depth_to_target, similarity
 
 
+# Check percentile normalization without reversing depth order or accepting constant targets.
 def test_depth_normalization_preserves_order_and_rejects_constant():
     raw = torch.arange(100, dtype=torch.float32).reshape(10, 10)
     target, normalization = depth_to_target(raw)
@@ -18,6 +20,7 @@ def test_depth_normalization_preserves_order_and_rejects_constant():
         depth_to_target(torch.full((10, 10), float("nan")))
 
 
+# Check that structure correlation and RGB error reveal different prediction failures.
 def test_metrics_distinguish_structure_and_color():
     target = torch.arange(100, dtype=torch.float32).reshape(1, 10, 10).expand(3, -1, -1) / 100
     perfect = similarity(target, target)

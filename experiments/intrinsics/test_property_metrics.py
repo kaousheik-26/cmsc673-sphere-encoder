@@ -1,3 +1,4 @@
+# Check normal angles, segmentation scoring, and differentiable palette conversion.
 import pytest
 import torch
 from experiments.intrinsics.property_metrics import (
@@ -5,6 +6,7 @@ from experiments.intrinsics.property_metrics import (
 )
 
 
+# Check unique class colors, label recovery, and known accuracy/IoU examples.
 def test_segmentation_encoding_and_confusion():
     palette = segmentation_palette()
     assert len(torch.unique(palette, dim=0)) == 150
@@ -19,6 +21,7 @@ def test_segmentation_encoding_and_confusion():
     assert metrics['miou'] == pytest.approx(0.0625)
 
 
+# Check matching, opposite, and undefined normals against expected angular errors.
 def test_normal_angles_and_zero_vector():
     target = torch.tensor([0.5, 0.5, 1.]).reshape(3, 1, 1)
     assert normal_metrics(target, target)['mean_angle_deg'] == 0
@@ -28,6 +31,7 @@ def test_normal_angles_and_zero_vector():
     assert normal_metrics(undefined, target)['mean_angle_deg'] == 90
 
 
+# Check that palette logits recover labels and remain differentiable for categorical training.
 def test_categorical_logits_match_palette_and_retain_gradients():
     from experiments.intrinsics.categorical_segmentation import palette_logits
     palette = segmentation_palette()

@@ -21,6 +21,7 @@ def decode_with_grad(model, z):
     return model.decoder(z, y, alpha=alpha) * 0.5 + 0.5
 
 
+# Prepare depth pairs, fit shared edits using validation selection, and evaluate held-out controls.
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -87,6 +88,7 @@ def main():
         (args.output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
         template = target[split["train"]].mean(0).cuda()
 
+        # Score each edit against teacher depth and shuffled targets, optionally saving comparison grids.
         @torch.no_grad()
         def evaluate(edit, indices, save=False, tag=""):
             records, rows, labels = [], [], []

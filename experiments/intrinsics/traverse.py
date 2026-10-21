@@ -1,3 +1,4 @@
+# Load a frozen checkpoint and compare geodesic and normalized-addition traversals.
 import argparse
 from contextlib import nullcontext
 import json
@@ -11,6 +12,7 @@ import torch
 from .geometry import geodesic_move, normalize, normalized_addition, project_tangent
 
 
+# Collect checkpoint and traversal settings, rejecting angles unsuitable for the matched baseline.
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -57,6 +59,7 @@ def build_checkpoint_model(config, checkpoint, weights, offline_encoder):
             rope_theta=100.0, key_bias=False, layer_norm_eps=1e-5,
         )
 
+        # Build the known encoder architecture offline; its weights are restored from the checkpoint.
         def construct_encoder(requested_name, *unused, **kwargs):
             if requested_name != f"facebook/{name.removeprefix('facebook/')}":
                 raise ValueError(f"Unexpected encoder requested: {requested_name}")
@@ -72,6 +75,7 @@ def build_checkpoint_model(config, checkpoint, weights, offline_encoder):
     return model.eval().requires_grad_(False)
 
 
+# Measure actual movement angles and radius drift to verify the sphere constraint.
 def latent_stats(z, moved, mode):
     dims = tuple(range(1, z.ndim)) if mode == "global" else (2,)
     a, b = z.double(), moved.double()
@@ -85,6 +89,7 @@ def latent_stats(z, moved, mode):
     }
 
 
+# Write labeled image comparisons, clipping display values without changing metric inputs.
 def save_grid(rows, labels, path):
     from PIL import Image, ImageDraw
     import numpy as np
@@ -101,6 +106,7 @@ def save_grid(rows, labels, path):
     canvas.save(path)
 
 
+# Encode each image, sweep both edit methods, and save grids with numerical diagnostics.
 @torch.no_grad()
 def main():
     args = parse_args()

@@ -7,6 +7,7 @@
 #SBATCH --mem=32G
 #SBATCH --time=00:20:00
 
+# Run checkpoint traversals on an allocated GPU using the project's inference environment.
 set -euo pipefail
 if [[ $# -lt 4 ]]; then
     echo 'Usage: sbatch traverse.slurm PROJECT_ROOT CHECKPOINT OUTPUT_DIR IMAGE [IMAGE ...]'

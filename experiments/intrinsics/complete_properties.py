@@ -1,3 +1,4 @@
+# Evaluate shared depth, normal, and segmentation edits on held-out images and categories.
 import argparse
 import copy
 import hashlib
@@ -15,6 +16,7 @@ from .shared_transform import SharedTransform
 from .train_shared_depth import decode_with_grad
 
 
+# Build property targets, fit or reload shared edits, and compare test and unseen-category results.
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--checkpoint', type=Path, required=True)
@@ -113,6 +115,7 @@ def main():
             majority_id = torch.bincount(labels[splits['train']].flatten(), minlength=150).argmax().item()
             majority = palette[majority_id][:,None,None].expand(3,256,256)
 
+        # Score edits and baselines using property-specific metrics and optional comparison grids.
         @torch.no_grad()
         def evaluate(edit, indices, tag=None, fixed=None, target_latent=False):
             records, matrix = [], torch.zeros(150,150, device='cuda', dtype=torch.long)

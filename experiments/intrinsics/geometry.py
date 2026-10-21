@@ -1,6 +1,8 @@
+# Sphere normalization and latent movements used by the frozen-model experiments.
 import math
 import torch
 
+# Validate latent shape and values, and choose axes for global or per-token geometry.
 def _prepare(z, mode):
     if not z.is_floating_point() or z.ndim < 2 or z.numel() == 0:
         raise ValueError("Expected a nonempty floating-point batched latent")
@@ -17,6 +19,7 @@ def _prepare(z, mode):
     return work, dims, radius
 
 
+# Scale each latent to unit RMS so it lies on the chosen sphere.
 def normalize(z, mode="global"):
 
     work, dims, radius = _prepare(z, mode)
@@ -26,6 +29,7 @@ def normalize(z, mode="global"):
     return (work * (radius / norm)).to(z.dtype)
 
 
+# Remove the radial component so the direction lies in the tangent plane at z.
 def project_tangent(z, direction, mode="global"):
 
     work, dims, _ = _prepare(z, mode)
@@ -40,6 +44,7 @@ def project_tangent(z, direction, mode="global"):
     return tangent.to(z.dtype)
 
 
+# Rotate along the tangent direction by the requested angle while preserving the input radius.
 def geodesic_move(z, direction, angle_deg, mode="global"):
 
     work, dims, _ = _prepare(z, mode)
@@ -62,6 +67,7 @@ def geodesic_move(z, direction, angle_deg, mode="global"):
     return torch.where(valid, moved, work).to(z.dtype)
 
 
+# Add an ambient offset and normalize back to the sphere as a comparison method.
 def normalized_addition(z, offset, scale=1.0, mode="global"):
 
     work, _, _ = _prepare(z, mode)
