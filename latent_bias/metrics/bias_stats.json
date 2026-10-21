@@ -1,0 +1,19 @@
+{
+  "num_images": 49,
+  "latent_dims": 98304,
+  "raw_DC_scalar_mean": 7.444245220256107e-10,
+  "raw_DC_scalar_std": 3.6644267620289384e-09,
+  "raw_DC_rel_to_std_mean": 7.444206917561758e-10,
+  "mean_direction_energy_encoded": 0.8360673189163208,
+  "mean_direction_energy_noise": 0.1428716778755188,
+  "mean_pairwise_cos_encoded": 0.6927390098571777,
+  "mean_pairwise_cos_noise": 4.216927209199639e-06,
+  "isotropic_cos_scale_1_over_sqrtD": 0.0031894397692489303,
+  "cos_to_bias_mean": 0.8360684514045715,
+  "cos_to_bias_min": 0.733441174030304,
+  "cos_to_bias_max": 0.8840572237968445,
+  "frac_variance_in_bias_dir_encoded": 0.6990085617599249,
+  "top1_gram_frac_encoded": 0.6999785304069519,
+  "top1_gram_frac_noise": 0.02126028761267662,
+  "top1_gram_frac_encoded_after_removing_bias": 0.08449938893318176
+}
