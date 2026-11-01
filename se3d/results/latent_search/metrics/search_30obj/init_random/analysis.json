@@ -1,0 +1,18 @@
+{
+ "A1_A2_A6": {
+  "random|mu0": {
+   "n": 150,
+   "lpips": 0.02308928204079469,
+   "lpips_ceiling": 0.10953212266167005,
+   "frac_beats_ceiling": 1.0,
+   "failure_rate": 0.0,
+   "ang_zstar_zgt": 89.96371047973633,
+   "ang_z0_zgt": 16.036929761568704,
+   "ang_zstar_z0": 90.05846181233724,
+   "lpips_redec_a10": 0.2770758980512619,
+   "lpips_redec_a20": 0.3483827500542005,
+   "lpips_redec_a40": 0.3870438332358996
+  }
+ },
+ "A3_A5_by_delta": {}
+}

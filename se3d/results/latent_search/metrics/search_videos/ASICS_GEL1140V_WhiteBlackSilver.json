@@ -1,0 +1,13 @@
+{
+ "object": "ASICS_GEL1140V_WhiteBlackSilver",
+ "mu": 1.0,
+ "steps": 400,
+ "ring_searched": {
+  "psnr": 29.54582577281528,
+  "lpips": 0.021234026204587683
+ },
+ "path_gs": {
+  "psnr": 30.688556893666586,
+  "lpips": 0.047635567933321
+ }
+}

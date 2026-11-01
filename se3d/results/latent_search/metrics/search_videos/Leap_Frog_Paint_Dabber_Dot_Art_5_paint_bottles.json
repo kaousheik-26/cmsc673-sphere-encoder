@@ -1,0 +1,13 @@
+{
+ "object": "Leap_Frog_Paint_Dabber_Dot_Art_5_paint_bottles",
+ "mu": 1.0,
+ "steps": 400,
+ "ring_searched": {
+  "psnr": 24.680158376693726,
+  "lpips": 0.0475841433637672
+ },
+ "path_gs": {
+  "psnr": 25.30186996459961,
+  "lpips": 0.11388513594865798
+ }
+}

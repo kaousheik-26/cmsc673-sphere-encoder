@@ -1,0 +1,18 @@
+{
+ "A1_A2_A6": {
+  "warp|mu0": {
+   "n": 150,
+   "lpips": 0.020465084134290615,
+   "lpips_ceiling": 0.10953212266167005,
+   "frac_beats_ceiling": 1.0,
+   "failure_rate": 0.0,
+   "ang_zstar_zgt": 27.577348925272624,
+   "ang_z0_zgt": 16.036929761568704,
+   "ang_zstar_z0": 26.95181593577067,
+   "lpips_redec_a10": 0.09843354627490043,
+   "lpips_redec_a20": 0.1570266661544641,
+   "lpips_redec_a40": 0.18162035778164864
+  }
+ },
+ "A3_A5_by_delta": {}
+}

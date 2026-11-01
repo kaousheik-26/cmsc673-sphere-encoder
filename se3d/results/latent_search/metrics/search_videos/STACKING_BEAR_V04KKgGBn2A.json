@@ -1,0 +1,13 @@
+{
+ "object": "STACKING_BEAR_V04KKgGBn2A",
+ "mu": 1.0,
+ "steps": 400,
+ "ring_searched": {
+  "psnr": 32.45535768402947,
+  "lpips": 0.019175834125942655
+ },
+ "path_gs": {
+  "psnr": 34.26623032887777,
+  "lpips": 0.04479578925917546
+ }
+}
