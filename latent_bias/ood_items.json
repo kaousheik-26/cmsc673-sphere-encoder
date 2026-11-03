@@ -1,0 +1,72 @@
+[
+  {
+    "kind": "real_nonanimal",
+    "title": "Rose",
+    "path": "workspace/latent_bias/ood/real_00.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Sunflower",
+    "path": "workspace/latent_bias/ood/real_01.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Eiffel Tower",
+    "path": "workspace/latent_bias/ood/real_02.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Sports car",
+    "path": "workspace/latent_bias/ood/real_03.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Mountain",
+    "path": "workspace/latent_bias/ood/real_04.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Pizza",
+    "path": "workspace/latent_bias/ood/real_06.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Bookshelf",
+    "path": "workspace/latent_bias/ood/real_07.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Golden Gate Bridge",
+    "path": "workspace/latent_bias/ood/real_08.jpg"
+  },
+  {
+    "kind": "real_nonanimal",
+    "title": "Coffee cup",
+    "path": "workspace/latent_bias/ood/real_09.jpg"
+  },
+  {
+    "kind": "synthetic",
+    "title": "mid_gray",
+    "path": "workspace/latent_bias/ood/gray.png"
+  },
+  {
+    "kind": "synthetic",
+    "title": "white",
+    "path": "workspace/latent_bias/ood/white.png"
+  },
+  {
+    "kind": "synthetic",
+    "title": "black",
+    "path": "workspace/latent_bias/ood/black.png"
+  },
+  {
+    "kind": "synthetic",
+    "title": "uniform_noise",
+    "path": "workspace/latent_bias/ood/noise.png"
+  },
+  {
+    "kind": "synthetic",
+    "title": "lowfreq_blobs",
+    "path": "workspace/latent_bias/ood/blobs.png"
+  }
+]

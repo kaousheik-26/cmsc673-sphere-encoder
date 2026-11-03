@@ -1,0 +1,62 @@
+[
+  {
+    "idx": 0,
+    "title": "Golden Retriever",
+    "input": "samples/inputs/00.jpg"
+  },
+  {
+    "idx": 1,
+    "title": "Tabby cat",
+    "input": "samples/inputs/01.jpg"
+  },
+  {
+    "idx": 2,
+    "title": "Zebra",
+    "input": "samples/inputs/02.jpg"
+  },
+  {
+    "idx": 3,
+    "title": "Lion",
+    "input": "samples/inputs/03.jpg"
+  },
+  {
+    "idx": 4,
+    "title": "Giant panda",
+    "input": "samples/inputs/04.jpg"
+  },
+  {
+    "idx": 5,
+    "title": "Flamingo",
+    "input": "samples/inputs/05.jpg"
+  },
+  {
+    "idx": 6,
+    "title": "King penguin",
+    "input": "samples/inputs/06.jpg"
+  },
+  {
+    "idx": 7,
+    "title": "Red fox",
+    "input": "samples/inputs/07.jpg"
+  },
+  {
+    "idx": 8,
+    "title": "Siberian Husky",
+    "input": "samples/inputs/08.jpg"
+  },
+  {
+    "idx": 9,
+    "title": "Indian peafowl",
+    "input": "samples/inputs/09.jpg"
+  },
+  {
+    "idx": 10,
+    "title": "Bengal tiger",
+    "input": "samples/inputs/10.jpg"
+  },
+  {
+    "idx": 11,
+    "title": "Cheetah",
+    "input": "samples/inputs/11.jpg"
+  }
+]

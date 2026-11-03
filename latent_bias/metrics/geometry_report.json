@@ -1,0 +1,39 @@
+{
+  "model": "workspace/experiments/sphere2-base-imagenet-256px/ckpt/ep0299.pth",
+  "n_animals": 49,
+  "animal_mean_dir_energy": 0.8360673189163208,
+  "animal_pairwise_cos": 0.6927390098571777,
+  "animal_top1_gram": 0.6999785304069519,
+  "exp2_ood_cos_to_bias": {
+    "real_nonanimal": {
+      "mean": 0.7654227614402771,
+      "min": 0.7380793690681458,
+      "max": 0.7903419733047485
+    },
+    "synthetic": {
+      "mean": 0.6684595942497253,
+      "min": 0.6524574160575867,
+      "max": 0.6963651180267334
+    }
+  },
+  "exp3_bias_token_constant_frac": 0.9803869128227234,
+  "exp3_token_norm_cv": 0.016888901591300964,
+  "exp1_between_class_cos": 0.8373817205429077,
+  "exp1_within_class_cos": 0.8057021498680115,
+  "exp1_classmean_to_bias_cos": 0.9045339822769165,
+  "exp7": {
+    "real_mean_dir_energy": 0.8360673189163208,
+    "gen_mean_dir_energy": 0.8412273526191711,
+    "proj_real": 0.8360684514045715,
+    "proj_gen": 0.8235530853271484,
+    "cos_real_gen_bias": 0.978989839553833
+  },
+  "exp6_cos_to_bias_by_angle": {
+    "0": 0.836067429610661,
+    "20": 0.7855959437331375,
+    "40": 0.6402407592656661,
+    "60": 0.4184766612490829,
+    "85": 0.07312968038782781
+  },
+  "exp6_cone_half_angle_deg": 33.66329024292677
+}
