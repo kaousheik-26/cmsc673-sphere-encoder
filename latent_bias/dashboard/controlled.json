@@ -1,0 +1,66 @@
+{
+  "steps": 6,
+  "angle": 85.0,
+  "examples": [
+    {
+      "i": 1,
+      "A": "lion",
+      "B": "zebra",
+      "strip": "img/ctrl_stepwise_ex1_lion_zebra.png",
+      "cmp": "img/ctrl_cmp_ex1_lion_zebra.png",
+      "ctl_cos": 0.6357035040855408,
+      "ctl_psnr": 13.055505066658394,
+      "unc_cos": 0.1289915293455124,
+      "unc_psnr": 9.382584859485144,
+      "fg_cov": 0.369598388671875
+    },
+    {
+      "i": 2,
+      "A": "golden",
+      "B": "tabbycat",
+      "strip": "img/ctrl_stepwise_ex2_golden_tabbycat.png",
+      "cmp": "img/ctrl_cmp_ex2_golden_tabbycat.png",
+      "ctl_cos": 0.6304711103439331,
+      "ctl_psnr": 13.884984704097645,
+      "unc_cos": 0.5319979786872864,
+      "unc_psnr": 10.267419936316388,
+      "fg_cov": 0.459564208984375
+    },
+    {
+      "i": 3,
+      "A": "panda",
+      "B": "flamingo",
+      "strip": "img/ctrl_stepwise_ex3_panda_flamingo.png",
+      "cmp": "img/ctrl_cmp_ex3_panda_flamingo.png",
+      "ctl_cos": 0.6895694732666016,
+      "ctl_psnr": 10.722298961158154,
+      "unc_cos": 0.090873122215271,
+      "unc_psnr": 7.88419664563377,
+      "fg_cov": 0.369537353515625
+    },
+    {
+      "i": 4,
+      "A": "penguin",
+      "B": "redfox",
+      "strip": "img/ctrl_stepwise_ex4_penguin_redfox.png",
+      "cmp": "img/ctrl_cmp_ex4_penguin_redfox.png",
+      "ctl_cos": 0.9074145555496216,
+      "ctl_psnr": 15.497848487893975,
+      "unc_cos": 0.1725580245256424,
+      "unc_psnr": 6.6694855850871,
+      "fg_cov": 0.181793212890625
+    },
+    {
+      "i": 5,
+      "A": "peacock",
+      "B": "husky",
+      "strip": "img/ctrl_stepwise_ex5_peacock_husky.png",
+      "cmp": "img/ctrl_cmp_ex5_peacock_husky.png",
+      "ctl_cos": 0.891592264175415,
+      "ctl_psnr": 23.48629083037427,
+      "unc_cos": 0.21603229641914368,
+      "unc_psnr": 9.427519543889698,
+      "fg_cov": 0.0445404052734375
+    }
+  ]
+}

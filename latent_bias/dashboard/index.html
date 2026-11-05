@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sphere encoder — latent bias</title>
+<style>
+  :root{
+    --bg:#f7f7f8; --panel:#ffffff; --ink:#15171a; --muted:#5b6168; --line:#e4e6ea;
+    --accent:#3b6ef2;      /* encoded / bias */
+    --accent2:#e08a1e;     /* noise / baseline */
+    --good:#1f9d6b; --bad:#d1495b; --chip:#eef1f6;
+    --shadow:0 1px 3px rgba(20,23,26,.06),0 6px 20px rgba(20,23,26,.05);
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1114; --panel:#16191d; --ink:#e9ebee; --muted:#9aa2ab; --line:#262b31;
+      --accent:#6e9bff; --accent2:#f0ad4e; --good:#45c48a; --bad:#ef6b7d; --chip:#1d2228;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1114; --panel:#16191d; --ink:#e9ebee; --muted:#9aa2ab; --line:#262b31;
+    --accent:#6e9bff; --accent2:#f0ad4e; --good:#45c48a; --bad:#ef6b7d; --chip:#1d2228;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 16px 80px}
+  header h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}
+  header p{color:var(--muted);margin:0;max-width:72ch}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tag{display:inline-block;background:var(--chip);color:var(--muted);border:1px solid var(--line);
+    border-radius:999px;padding:2px 10px;font-size:12px;margin-right:6px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 22px 24px;margin:20px 0;box-shadow:var(--shadow)}
+  section h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 4px}
+  section h3{font-size:19px;margin:2px 0 10px;letter-spacing:-.01em}
+  p.lead{margin:0 0 14px;color:var(--ink)}
+  .fig{margin:14px 0 6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+  .fig img{display:block;width:100%;height:auto}
+  figcaption{color:var(--muted);font-size:13px;margin:8px 2px 0}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0}
+  .stat{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .stat .n{font-size:24px;font-weight:650;letter-spacing:-.02em}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .key{display:flex;gap:16px;flex-wrap:wrap;margin:4px 0 2px;font-size:13px;color:var(--muted)}
+  .key b{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  .barrow{display:grid;grid-template-columns:150px 1fr 54px;align-items:center;gap:10px;margin:4px 0}
+  .barrow .lab{font-size:13px;color:var(--ink)}
+  .track{background:var(--chip);border-radius:6px;height:16px;position:relative;overflow:hidden}
+  .bar{height:100%;border-radius:6px}
+  .barrow .v{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+  svg{display:block;width:100%;height:auto}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px;text-align:center}
+  .pill{font-weight:600}
+  .up{color:var(--good)} .dn{color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div style="margin-bottom:10px">
+    <span class="tag">sphere2 · base-imagenet-256</span>
+    <span class="tag">frozen DINOv3 ViT-S/16+</span>
+    <span class="tag">latent 256×384 = 98,304-d</span>
+  </div>
+  <h1>A bias in the spherical encoder's latent space</h1>
+  <p>Every image the encoder produces lands in a narrow cone around one shared direction. That
+  "bias" holds ~70% of the latent's variance, is present for <em>any</em> input (even flat gray or
+  pure noise), is a per-channel offset from DINOv3's last layer — and it inflates the cosine
+  similarities we use to judge whether the prior survives editing.</p>
+</header>
+
+<section>
+  <h2>Segmentation-controlled round trip</h2>
+  <h3>Anchor the background, and the prior stops drifting</h3>
+  <p class="lead">A foreground mask (U²-Net) separates the main figure from the background. During the
+  whole A→B→A trip we composite the <em>original background</em> back at every step, so the scene is
+  locked and only the masked subject is edited. The scene can no longer run away.</p>
+  <div class="cols">
+    <div class="stat"><div class="n" style="color:var(--good)">0.75</div><div class="l">mean content-cos, <b>controlled</b></div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">0.23</div><div class="l">mean content-cos, uncontrolled</div></div>
+    <div class="stat"><div class="n" style="color:var(--good)">15.3 dB</div><div class="l">mean PSNR, controlled</div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">8.7 dB</div><div class="l">mean PSNR, uncontrolled</div></div>
+  </div>
+  <div id="ctrlgallery"></div>
+  <figcaption>Each panel: <b>original · mask · uncontrolled final · controlled final</b>, then the
+  controlled step-by-step strip (row 1 A→B, row 2 B→A). The mask holds the composition; the subject
+  returns to class A inside the original scene. (Fidelity of the masked subject still degrades at 85°,
+  and tiny/poor masks — e.g. peacock 4% — mostly copy the original.)</figcaption>
+</section>
+
+<section>
+  <h2>Step by step · lion → cat → lion</h2>
+  <h3>Does the regenerated lion return to the original's prior?</h3>
+  <p class="lead">Top row: the lion edited toward <em>cat</em>, every diffusion step (left = original lion).
+  Bottom row: that generated cat edited back toward <em>lion</em>, every step (right = final lion).
+  edit angle 85°, 6 steps each pass.</p>
+  <figure class="fig"><img src="img/roundtrip_stepwise.png" alt="stepwise lion-cat-lion" loading="lazy"></figure>
+  <figcaption>The lying, left-facing posture loosely carries through — but the scene drifts (outdoor rock →
+  indoor floor → sunlit close-up) and the final lion is a <em>different</em> lion, not the one we started with.</figcaption>
+
+  <h3 style="margin-top:20px">The prior drifts down, then only partly recovers</h3>
+  <p class="lead">Content-only cosine (bias removed) to the <b>original</b> lion's prior, across all 12 steps.
+  Self-similarity of the original is 1.0.</p>
+  <div id="drift"></div>
+  <div class="cols" style="margin-top:12px">
+    <div class="stat"><div class="n">0.056</div><div class="l">lowest content-cos (at the cat)</div></div>
+    <div class="stat"><div class="n">0.240</div><div class="l">final lion's content-cos to the original</div></div>
+    <div class="stat"><div class="n">8.3 dB</div><div class="l">pixel PSNR, final lion vs original</div></div>
+    <div class="stat"><div class="n">partial</div><div class="l">prior recovered — nowhere near 1.0</div></div>
+  </div>
+  <figure class="fig" style="margin-top:14px"><img src="img/start_vs_end.png" alt="original vs final lion" loading="lazy"></figure>
+  <figcaption>Original lion (left) vs the lion after the full round trip (right): same class and rough pose,
+  different instance. The double 85° pass destroys content; the return trip re-aligns toward "lion" but
+  can't recover the specific original.</figcaption>
+</section>
+
+<section>
+  <h2>Five round trips · different classes</h2>
+  <h3>A → B → A, every diffusion step (angle 85°)</h3>
+  <p class="lead">Each panel: top row edits A→B step by step (left = original A); bottom row edits that
+  generated B back to A (right = final A). The badge shows the final <em>content-cos</em> to the original
+  (1.0 = identical). Recovery is class-dependent — strong for some, near-zero for others.</p>
+  <div id="gallery"></div>
+</section>
+
+<section>
+  <h2>The headline numbers</h2>
+  <h3>49 diverse animals vs the isotropic noise prior <span class="mono" style="color:var(--muted)">f(randn)</span></h3>
+  <div class="cols">
+    <div class="stat"><div class="n">+0.69</div><div class="l">mean cosine between <em>different</em> images (noise prior: +0.00)</div></div>
+    <div class="stat"><div class="n">70%</div><div class="l">of latent variance in a single direction (noise: 2%)</div></div>
+    <div class="stat"><div class="n">0.84</div><div class="l">mean cos(image, bias direction) — range 0.73–0.88</div></div>
+    <div class="stat"><div class="n">98%</div><div class="l">of the bias is one per-channel vector copied across all 256 tokens</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Decoding the latent space directly — not from an image</h2>
+  <h3>What the bias looks like</h3>
+  <p class="lead">Rows: <b>①</b> the bias direction decoded under 5 class labels, <b>②</b> random
+  sphere points (the generator's prior), <b>③</b> real encoded images, <b>④</b> the same with the
+  bias direction removed.</p>
+  <figure class="fig"><img src="img/latent_probe.png" alt="latent probe montage" loading="lazy"></figure>
+  <figcaption>
+    ① the single bias direction decodes to a faint, generic "animal-on-ground" ghost — <em>nearly
+    identical whatever class we condition on</em>.&nbsp;
+    ② random isotropic points decode to junk: coherent images live only inside the biased cone.&nbsp;
+    ③→④ removing the direction that holds 70% of the variance leaves every animal fully recognizable —
+    so the bias is largely content-free.
+  </figcaption>
+</section>
+
+<section>
+  <h2>#2 · Is it about the images, or the encoder?</h2>
+  <h3>Even gray and noise fall into the same cone</h3>
+  <p class="lead">cos(input, animal-bias-direction). If the bias were about animal content, non-animal
+  and degenerate inputs would sit near 0. They don't — there's a ~0.66 floor for <em>anything</em>.</p>
+  <div id="ood"></div>
+  <figcaption>The bias is intrinsic to the frozen DINOv3 encoder, not learned from the data.</figcaption>
+</section>
+
+<section>
+  <h2>#5 · The bias was inflating our metric</h2>
+  <h3>Round-trip prior preservation, raw vs bias-removed cosine</h3>
+  <p class="lead">A→B→A editing at 85°. Raw cosine says the prior "stays intact" (~0.8). With the
+  shared bias projected out, the true content similarity is far lower — and the ordering becomes clean.</p>
+  <div class="key">
+    <span><b style="background:var(--accent)"></b>raw cosine</span>
+    <span><b style="background:var(--accent2)"></b>residual cosine (bias removed)</span>
+  </div>
+  <div id="rt"></div>
+  <figcaption>Removing the pedestal drops 0.78→0.23. The round trip (0.34) still recovers above the
+  one-way detour (0.23) but stays below a single direct edit (0.46): the double pass costs content.</figcaption>
+</section>
+
+<section>
+  <h2>#6 · Where edits go</h2>
+  <h3>Injected noise pushes the latent out of the cone</h3>
+  <p class="lead">cos(latent, bias) as the edit mixes in noise. The encoded cone sits at 0.66–0.84;
+  the default 85° edit drives it to 0.07 — below even the noise floor — so the decoder must pull it back.</p>
+  <div id="cone"></div>
+</section>
+
+<section>
+  <h2>#4 · Where the bias comes from</h2>
+  <h3>It emerges in DINOv3's last block, and nothing downstream changes it</h3>
+  <p class="lead">Anisotropy (mean pairwise cosine) per DINOv3 block — moderate through the network,
+  then it spikes at the final block.</p>
+  <div id="layers"></div>
+  <table>
+    <tr><th>check</th><th class="num">result</th><th>meaning</th></tr>
+    <tr><td>raw encoder <span class="mono">U</span> vs spherified <span class="mono">f(U)</span></td><td class="num">identical</td><td>spherify is a radial rescale — it can't create or remove the bias</td></tr>
+    <tr><td>base vs <b>fd-lite</b> latents</td><td class="num">cos = 1.0000</td><td>encoder is frozen &amp; shared → bias is objective-invariant</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>#1 · One global bias · #3 structure · #7 real vs generated</h2>
+  <table>
+    <tr><th>observation</th><th class="num">value</th><th>reading</th></tr>
+    <tr><td>between-class cos (class-mean dirs)</td><td class="num">+0.837</td><td rowspan="2">classes aren't separated along these directions — one shared pedestal, not per-class biases</td></tr>
+    <tr><td>cos(class-mean, global bias)</td><td class="num">+0.905</td></tr>
+    <tr><td>bias energy that is per-channel DC</td><td class="num">98.0%</td><td>a single 384-d channel vector copied to every token</td></tr>
+    <tr><td>cos(real-bias dir, generated-bias dir)</td><td class="num">+0.979</td><td>the generator reproduces the same bias — no real/generated gap</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>#8 · What the bias carries</h2>
+  <h3>Mostly global tone / colour, not identity</h3>
+  <p class="lead">Columns: keep · remove the bias · over-remove it. Identity and pose are preserved
+  throughout; what shifts is the overall colour balance.</p>
+  <figure class="fig"><img src="img/bias_scale.png" alt="bias scale sweep" loading="lazy"></figure>
+  <figcaption>Removing the bias costs only ~3 dB of reconstruction and changes palette, not content —
+  the big shared direction is a low-level appearance offset.</figcaption>
+</section>
+
+<p class="foot">sphere2 latent-bias probe · 49 images · figures rendered from the model's own decoder ·
+served from <span class="mono">workspace/latent_bias/site</span></p>
+</div>
+
+<script>
+const C = getComputedStyle(document.documentElement);
+const ACC = C.getPropertyValue('--accent').trim(), ACC2 = C.getPropertyValue('--accent2').trim(),
+      MUT = C.getPropertyValue('--muted').trim(), LINE = C.getPropertyValue('--line').trim(),
+      CHIP = C.getPropertyValue('--chip').trim(), INK = C.getPropertyValue('--ink').trim();
+
+/* ---- #2 OOD horizontal bars ---- */
+const ood = [
+  ['animals (reference)', 0.84, ACC],
+  ['rose', .789,ACC],['coffee cup', .790,ACC],['mountain', .771,ACC],['sunflower', .771,ACC],
+  ['eiffel tower', .766,ACC],['sports car', .761,ACC],['bookshelf', .760,ACC],
+  ['golden gate', .742,ACC],['pizza', .738,ACC],
+  ['low-freq blobs', .696,ACC2],['white', .670,ACC2],['black', .662,ACC2],
+  ['uniform noise', .661,ACC2],['mid gray', .652,ACC2],
+];
+function bars(el, rows, max){
+  const host = document.getElementById(el);
+  rows.forEach(([lab,v,col])=>{
+    const r=document.createElement('div'); r.className='barrow';
+    r.innerHTML=`<div class="lab">${lab}</div>
+      <div class="track"><div class="bar" style="width:${(v/max*100).toFixed(1)}%;background:${col}"></div></div>
+      <div class="v">${v.toFixed(3)}</div>`;
+    host.appendChild(r);
+  });
+}
+bars('ood', ood, 1.0);
+
+/* ---- #5 round-trip grouped bars (raw vs residual) ---- */
+(function(){
+  const data=[['one-way  A→B',0.780,0.230],['round  A→B→A',0.811,0.344],['direct  →A',0.839,0.461]];
+  const host=document.getElementById('rt');
+  data.forEach(([lab,raw,res])=>{
+    const r=document.createElement('div'); r.className='barrow';
+    r.innerHTML=`<div class="lab">${lab}</div>
+      <div class="track" style="height:30px">
+        <div class="bar" style="height:13px;margin:1px 0;width:${raw*100}%;background:${ACC}"></div>
+        <div class="bar" style="height:13px;margin:1px 0;width:${res*100}%;background:${ACC2}"></div>
+      </div>
+      <div class="v">${raw.toFixed(2)}/${res.toFixed(2)}</div>`;
+    host.appendChild(r);
+  });
+})();
+
+/* ---- #6 cone vs angle line chart ---- */
+(function(){
+  const pts=[[0,.836],[20,.786],[40,.640],[60,.418],[85,.073]];
+  const W=640,H=230,pl=44,pr=16,pt=14,pb=34, iw=W-pl-pr, ih=H-pt-pb;
+  const x=a=>pl+a/90*iw, y=v=>pt+(1-v)*ih;
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="cosine to bias vs injected angle">`;
+  // grid + y labels
+  [0,.2,.4,.6,.8,1].forEach(v=>{g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${LINE}"/>
+    <text x="${pl-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="${MUT}">${v.toFixed(1)}</text>`;});
+  [0,20,40,60,85].forEach(a=>{g+=`<text x="${x(a)}" y="${H-12}" text-anchor="middle" font-size="11" fill="${MUT}">${a}°</text>`;});
+  // cone band 0.66–0.84
+  g+=`<rect x="${pl}" y="${y(.84)}" width="${iw}" height="${y(.66)-y(.84)}" fill="${ACC}" opacity=".10"/>
+      <text x="${W-pr-4}" y="${y(.84)+14}" text-anchor="end" font-size="10.5" fill="${MUT}">encoded cone 0.66–0.84</text>`;
+  const d=pts.map((p,i)=>`${i?'L':'M'}${x(p[0])},${y(p[1])}`).join(' ');
+  g+=`<path d="${d}" fill="none" stroke="${ACC}" stroke-width="2.5"/>`;
+  pts.forEach(p=>{g+=`<circle cx="${x(p[0])}" cy="${y(p[1])}" r="4" fill="${ACC}"/>
+    <text x="${x(p[0])}" y="${y(p[1])-9}" text-anchor="middle" font-size="11" fill="${INK}">${p[1].toFixed(2)}</text>`;});
+  g+=`<text x="${pl}" y="11" font-size="11" fill="${MUT}">cos(latent, bias)</text></svg>`;
+  document.getElementById('cone').innerHTML=g;
+})();
+
+/* ---- segmentation-controlled gallery ---- */
+(function(){
+  fetch('controlled.json').then(r=>r.json()).then(d=>{
+    const host=document.getElementById('ctrlgallery');
+    d.examples.forEach(ex=>{
+      const dc = (ex.ctl_cos-ex.unc_cos);
+      const wrap=document.createElement('div'); wrap.style.margin='18px 0 6px';
+      const barW = v => Math.max(0, Math.min(100, v*100));
+      wrap.innerHTML=`
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+          <div style="font-size:16px;font-weight:600">${ex.i}. ${ex.A} → ${ex.B} → ${ex.A}</div>
+          <div style="font-size:13px;color:var(--muted)">content-cos
+            <span class="pill up">${ex.ctl_cos.toFixed(2)} controlled</span> vs
+            <span class="pill dn">${ex.unc_cos.toFixed(2)} uncontrolled</span>
+            · PSNR ${ex.ctl_psnr.toFixed(1)} vs ${ex.unc_psnr.toFixed(1)} dB</div>
+        </div>
+        <div class="fig" style="margin:8px 0 4px"><img src="${ex.cmp}" alt="${ex.A} controlled comparison" loading="lazy"></div>
+        <div style="font-size:12px;color:var(--muted);margin:2px 2px 8px">original · mask · uncontrolled final · controlled final</div>
+        <div class="barrow"><div class="lab">controlled</div><div class="track"><div class="bar" style="width:${barW(ex.ctl_cos)}%;background:var(--good)"></div></div><div class="v">${ex.ctl_cos.toFixed(2)}</div></div>
+        <div class="barrow"><div class="lab">uncontrolled</div><div class="track"><div class="bar" style="width:${barW(ex.unc_cos)}%;background:var(--bad)"></div></div><div class="v">${ex.unc_cos.toFixed(2)}</div></div>
+        <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">show controlled step-by-step</summary>
+          <div class="fig" style="margin:8px 0 0"><img src="${ex.strip}" alt="controlled stepwise" loading="lazy"></div></details>`;
+      host.appendChild(wrap);
+      const hr=document.createElement('div'); hr.style.borderTop='1px solid var(--line)'; hr.style.margin='16px 0'; host.appendChild(hr);
+    });
+  }).catch(e=>{document.getElementById('ctrlgallery').innerHTML='<p style="color:var(--muted)">controlled.json not found</p>';});
+})();
+
+/* ---- 5-example gallery (fetched from stepwise5.json) ---- */
+(function(){
+  fetch('stepwise5.json').then(r=>r.json()).then(d=>{
+    const host=document.getElementById('gallery'); const S=d.steps;
+    d.examples.forEach(ex=>{
+      const good = ex.final>=0.2, mid = ex.final>=0.05 && ex.final<0.2;
+      const col = good?'var(--good)':(mid?'var(--accent2)':'var(--bad)');
+      const verdict = good?'partly recovered':(mid?'weak':'lost');
+      const wrap=document.createElement('div'); wrap.style.margin='18px 0 6px';
+      // mini drift sparkline
+      const W=360,H=70,pl=4,pr=4,pt=8,pb=8,iw=W-pl-pr,ih=H-pt-pb;
+      const xs=i=>pl+i/(ex.drift.length-1)*iw, ys=v=>pt+(1-Math.max(-.1,Math.min(1,v)))/1.1*ih;
+      let sv=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:360px">`;
+      sv+=`<line x1="${pl}" x2="${W-pr}" y1="${ys(1)}" y2="${ys(1)}" stroke="var(--accent2)" stroke-dasharray="3 3"/>`;
+      sv+=`<line x1="${pl}" x2="${W-pr}" y1="${ys(0)}" y2="${ys(0)}" stroke="${LINE}"/>`;
+      sv+=`<line x1="${xs(S-1)}" x2="${xs(S-1)}" y1="${pt}" y2="${H-pb}" stroke="${MUT}" stroke-dasharray="2 3" opacity=".5"/>`;
+      const dd=ex.drift.map((v,i)=>`${i?'L':'M'}${xs(i)},${ys(v)}`).join(' ');
+      sv+=`<path d="${dd}" fill="none" stroke="${ACC}" stroke-width="2"/>`;
+      ex.drift.forEach((v,i)=>{sv+=`<circle cx="${xs(i)}" cy="${ys(v)}" r="2.3" fill="${i===S-1?ACC2:ACC}"/>`;});
+      sv+=`</svg>`;
+      wrap.innerHTML=`
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+          <div style="font-size:16px;font-weight:600">${ex.i}. ${ex.A} → ${ex.B} → ${ex.A}</div>
+          <div style="font-size:13px;color:var(--muted)">
+            final content-cos <span class="pill" style="color:${col}">${ex.final.toFixed(2)}</span>
+            · ${verdict} · PSNR ${ex.psnr.toFixed(1)} dB</div>
+        </div>
+        <div class="fig" style="margin:8px 0 4px"><img src="${ex.img}" alt="${ex.A} to ${ex.B} stepwise" loading="lazy"></div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+          <div style="color:var(--muted);font-size:12.5px">prior vs original across steps (dashed = 1.0):</div>
+          ${sv}
+        </div>`;
+      host.appendChild(wrap);
+      const hr=document.createElement('div'); hr.style.borderTop='1px solid var(--line)'; hr.style.margin='16px 0'; host.appendChild(hr);
+    });
+  }).catch(e=>{document.getElementById('gallery').innerHTML='<p style="color:var(--muted)">stepwise5.json not found</p>';});
+})();
+
+/* ---- stepwise prior-drift line chart ---- */
+(function(){
+  const fwd=[.438,.226,.157,.134,.096,.056], bwd=[.097,.160,.174,.189,.219,.240];
+  const ys=fwd.concat(bwd);                       // 12 points
+  const labs=ys.map((_,i)=> i<6?('→cat '+i):('→lion '+(i-6)));
+  const W=820,H=250,pl=40,pr=14,pt=16,pb=40, iw=W-pl-pr, ih=H-pt-pb;
+  const x=i=>pl+ (ys.length<2?0:i/(ys.length-1)*iw), y=v=>pt+(1-v)*ih;
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="content cosine to original lion per step">`;
+  [0,.25,.5,.75,1].forEach(v=>{g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${LINE}"/>
+     <text x="${pl-7}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="${MUT}">${v.toFixed(2)}</text>`;});
+  // original self-similarity reference at 1.0
+  g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(1)}" y2="${y(1)}" stroke="${ACC2}" stroke-dasharray="4 4"/>
+      <text x="${W-pr-4}" y="${y(1)-5}" text-anchor="end" font-size="10.5" fill="${ACC2}">original lion = 1.0</text>`;
+  // phase divider
+  g+=`<line x1="${x(5)}" x2="${x(5)}" y1="${pt}" y2="${pt+ih}" stroke="${MUT}" stroke-dasharray="2 4" opacity=".5"/>
+      <text x="${x(2.5)}" y="${H-10}" text-anchor="middle" font-size="11" fill="${MUT}">lion → cat</text>
+      <text x="${x(8.5)}" y="${H-10}" text-anchor="middle" font-size="11" fill="${MUT}">cat → lion</text>`;
+  const d=ys.map((v,i)=>`${i?'L':'M'}${x(i)},${y(v)}`).join(' ');
+  g+=`<path d="${d}" fill="none" stroke="${ACC}" stroke-width="2.5"/>`;
+  ys.forEach((v,i)=>{g+=`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="${i===5?ACC2:ACC}"/>`;});
+  g+=`<text x="${x(5)}" y="${y(.056)+18}" text-anchor="middle" font-size="10.5" fill="${ACC2}">cat (0.06)</text>
+      <text x="${x(11)}" y="${y(.240)-9}" text-anchor="end" font-size="10.5" fill="${INK}">final 0.24</text>
+      <text x="${pl}" y="11" font-size="11" fill="${MUT}">content-cos to original lion</text></svg>`;
+  document.getElementById('drift').innerHTML=g;
+})();
+
+/* ---- #4 per-block anisotropy bars ---- */
+(function(){
+  const rows=[['block 0',.466],['block 3',.428],['block 6',.391],['block 9',.389],
+              ['block 11',.685],['final',.693]];
+  const host=document.getElementById('layers');
+  rows.forEach(([lab,v])=>{
+    const hot = v>.6;
+    const r=document.createElement('div'); r.className='barrow';
+    r.innerHTML=`<div class="lab">${lab}</div>
+      <div class="track"><div class="bar" style="width:${v*100}%;background:${hot?ACC:MUT}"></div></div>
+      <div class="v">${v.toFixed(3)}</div>`;
+    host.appendChild(r);
+  });
+})();
+</script>
+</body>
+</html>
