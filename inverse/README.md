@@ -21,7 +21,7 @@ Two versions of the loop are compared:
 
 For haze and overexposure we also report **undo, no model**: the known damage reversed by formula, with no model at all.
 
-Open [`index.html`](index.html) in a browser for a page with these results, charts and figures.
+Open [`index.html`](index.html) in a browser for a page with these results, charts and figures, with one tab per approach.
 
 ## The damage
 
@@ -118,6 +118,40 @@ All tables use 32 validation images and show PSNR / LPIPS, with the best pass in
 
 ![too bright, x4](figures/overexpose_4.jpg)
 
+## One-step latent fix
+
+```
+damaged image  ->  encode  ->  subtract the damage direction  ->  decode
+```
+
+Each kind of damage moves an image's latent in a partly shared direction (for blur, noise and haze, one image's shift lines up with the average shift of the others by about 0.24 to 0.37, where 0 means unrelated). So we subtract that shared direction once and decode, with no added noise, no anchor and no second pass.
+
+**Finding the damage direction.** One direction per damage type and strength, with no training:
+
+1. Take 64 clean training images and damage each one the same way.
+2. Encode both versions and scale each latent (16 × 16 tokens of 384 numbers) to length 1, the way the model places latents on its sphere.
+3. For each image, the shift is the damaged latent minus the clean latent.
+4. The damage direction is the average of the 64 shifts, one fixed array the size of a latent. What is specific to each image mostly cancels out.
+
+To fix an image, subtract α times the direction (scaled to the latent's length) and decode. α was chosen among 0 to 4 on 32 other training images (1 for blur, 1.5 for the rest).
+
+| Damage (heaviest) | Damaged | Encode, decode | Encode, subtract, decode | Best restoration loop |
+| --- | --- | --- | --- | --- |
+| Blur 12px | 19.9 / 0.629 | 16.8 / 0.517 | 17.0 / 0.406 | **22.2 / 0.362** (anchored) |
+| Noise std 0.5 | 9.2 / 1.457 | 17.3 / 0.365 | **18.3 / 0.312** | 17.2 / 0.372 (1 pass) |
+| Haze, densest 10% | 11.3 / 0.366 | 18.0 / 0.254 | 19.0 / **0.229** | **28.2** / 0.254 (anchored) |
+| Too bright ×4 | 7.0 / 0.563 | 16.6 / 0.331 | **18.1 / 0.310** | 17.8 / 0.355 (anchored) |
+
+32 validation images, PSNR / LPIPS.
+
+- **Too bright and noise:** the one-step fix is the best method we have, on both metrics. Blown-out flowers get their color back, which no version of the loop managed.
+- **Haze:** the haze is visibly removed and LPIPS is the best of all methods, but PSNR is far below the anchored loop, because brightness and colors don't match the original exactly.
+- **Blur:** the result looks sharp but isn't the right image. PSNR falls below the blurred input and colors shift. The anchored loop is clearly better.
+- **The subtraction always helps** compared with encoding and decoding the damaged image unchanged.
+- **Limitation:** the direction depends on the damage type and its strength, so both must be known. A clean version of the image being fixed isn't needed.
+
+![one-step latent fix](figures/direct_fix.jpg)
+
 ## Setup
 
 ```bash
@@ -159,7 +193,10 @@ $V --tasks overexpose --meas_noise 0.01 --levels 4 --mus 0 10 --schedules 10x5 -
 # figures (defaults match the ones above)
 for t in deblur denoise dehaze overexpose; do python inverse/make_figure.py --task $t; done
 
-# tables above + the data block of index.html
+# one-step latent fix: numbers and figure (writes to <workspace>/inverse/<checkpoint>/latent/)
+python inverse/shift_direct.py
+
+# tables above + the data blocks of index.html
 python inverse/summarize.py
 ```
 
@@ -171,6 +208,9 @@ python inverse/summarize.py
 | --- | --- |
 | `run_inverse.py` | damage models, the restoration loop with the anchor, metrics, sweeps |
 | `make_figure.py` | the labeled figures above |
-| `summarize.py` | the tables above, and the data block of `index.html` |
-| `index.html` | results page |
-| `figures/` | the four figures (JPEG copies of the full-size PNGs) |
+| `shift_direct.py` | the one-step latent fix |
+| `latent_analysis.py` | how far and in which direction each damage moves the latent (and figures of it) |
+| `latent_shift.py` | the damage direction subtracted inside the restoration loop. Also holds helpers `shift_direct.py` uses |
+| `summarize.py` | the tables above, and the data blocks of `index.html` |
+| `index.html` | results page, with a tab per approach |
+| `figures/` | the figures above (JPEG copies of the full-size PNGs) |

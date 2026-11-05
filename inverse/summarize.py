@@ -1,10 +1,11 @@
 """
 collect the analysis runs into one results table: prints the markdown tables
-for the readme and writes the data block of the results website (index.html).
+for the readme and writes the data blocks of the results website (index.html).
 
 reads, under <dev_dir>/inverse/<job_dir>/:
     analysis/<task>/summary.csv   32 val images, every strength (the curves)
     <figure run>/summary.csv      the 10 val images shown in each figure
+    latent/direct_summary.json    the one-step latent fix (shift_direct.py)
 
 usage:
     python inverse/summarize.py
@@ -116,19 +117,39 @@ def main():
             row += f" {fmt(loop)} ({loop['step']}) | {fmt(anch)} ({anch['step']}) |"
             print(row)
 
-    # write the data block of the website
+    # the one-step latent fix, next to the best restoration loop at the same
+    # (heaviest) strength
+    with open(osp.join(root, "latent", "direct_summary.json")) as f:
+        direct = json.load(f)
+    fmt = lambda q: f"{q['psnr']:.1f} / {q['lpips']:.3f}"  # noqa: E731
+    print("\n### One-step latent fix, heaviest strength, 32 val images\n")
+    print("| Damage | Damaged | Encode, decode | Encode, subtract, decode | Best restoration loop |")
+    print("| --- | --- | --- | --- | --- |")
+    for t in data:
+        r, heavy = direct[t["id"]], t["levels"][-1]
+        assert r["level"] == heavy["level"], (t["id"], r["level"], heavy["level"])
+        helps = all(best(lv["curves"][f"{t['mu']:g}"])["lpips"] < best(lv["curves"]["0"])["lpips"]
+                    for lv in t["levels"])
+        loop = best(heavy["curves"][f"{t['mu']:g}" if helps else "0"])
+        r["best_loop"] = {**loop, "anchored": helps}
+        print(f"| {t['name']} {heavy['level']:g}{t['unit']} | {fmt(r['damaged'])} | "
+              f"{fmt(r['decode_without_subtraction'])} | {fmt(r['decode_with_subtraction'])} "
+              f"(alpha {r['alpha']:g}) | {fmt(loop)} |")
+
+    # write the data blocks of the website
     with open(args.html) as f:
         html = f.read()
-    block = json.dumps(data, separators=(",", ":"))
-    html, n = re.subn(
-        r'(<script id="results" type="application/json">).*?(</script>)',
-        lambda m: m.group(1) + block + m.group(2), html, flags=re.S,
-    )
-    if n != 1:
-        raise SystemExit(f"no results block found in {args.html}")
+    for block_id, payload in [("results", data), ("direct", direct)]:
+        block = json.dumps(payload, separators=(",", ":"))
+        html, n = re.subn(
+            rf'(<script id="{block_id}" type="application/json">).*?(</script>)',
+            lambda m: m.group(1) + block + m.group(2), html, flags=re.S,
+        )
+        if n != 1:
+            raise SystemExit(f'no "{block_id}" block found in {args.html}')
     with open(args.html, "w") as f:
         f.write(html)
-    print(f"\nwrote the results block of {args.html}")
+    print(f"\nwrote the data blocks of {args.html}")
 
 
 if __name__ == "__main__":
