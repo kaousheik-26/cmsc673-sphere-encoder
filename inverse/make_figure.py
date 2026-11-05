@@ -8,9 +8,9 @@ clean image under every tile:
     anchored, k passes   the same loop plus the data prox after each decode
 for each k in --passes.
 
-usage (defaults reproduce the figures in the readme):
+usage (defaults reproduce the figures in the readme, ~30 s each):
     python inverse/make_figure.py --task deblur
-    python inverse/make_figure.py --task denoise
+    python inverse/make_figure.py --task denoise --level 0.2 --passes 1 2 3
 """
 
 import argparse
@@ -26,11 +26,17 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, osp.dirname(osp.abspath(__file__)))
 import run_inverse as ri  # noqa: E402
 
-# task -> (degradation level, data weight mu). mu is the best value from a
-# sweep over train images (see readme)
+# task -> (degradation level, data weight mu, measurement noise, passes shown),
+# the settings of the figures in the readme. mu is the best value from a sweep
+# over train images. dehaze uses patchy haze; its level is the transmission in
+# the densest patch
 TASKS = {
-    "denoise": (0.2, 0.05),
-    "deblur": (4.0, 25.0),
+    "denoise": (0.5, 0.05, 0.0, [1, 2, 3]),
+    "deblur": (12.0, 1000.0, 0.0, [1, 3, 5]),
+    "dehaze": (0.1, 25.0, 0.02, [1, 3, 5]),
+    # too dark: no weight beats the plain loop on lpips; 100 has the best psnr
+    "underexpose": (0.05, 100.0, 0.01, [1, 2, 3]),
+    "overexpose": (4.0, 10.0, 0.01, [1, 3, 5]),
 }
 ANGLE = 10.0  # latent noise angle (deg) of every pass
 
@@ -90,15 +96,20 @@ def main():
     p.add_argument("--dev_dir", default=osp.join(ri.REPO, "workspace"))
     p.add_argument("--job_dir", default="sphere2-large-flowers-512px")
     p.add_argument("--split", default="val")
-    p.add_argument("--num_images", type=int, default=3)
-    p.add_argument("--image_offset", type=int, default=2,
+    p.add_argument("--num_images", type=int, default=10)
+    p.add_argument("--image_offset", type=int, default=0,
                    help="skip this many images (pick different examples)")
-    p.add_argument("--passes", nargs="+", type=int, default=[1, 2, 3])
+    p.add_argument("--level", type=float, default=None,
+                   help="degradation strength (default: the task's entry in TASKS)")
+    p.add_argument("--mu", type=float, default=None,
+                   help="anchor data weight (default: the task's entry in TASKS)")
+    p.add_argument("--passes", nargs="+", type=int, default=None,
+                   help="passes to show (default: the task's entry in TASKS)")
     p.add_argument("--tile", type=int, default=384,
                    help="tile side in pixels (images are 512px; larger keeps more detail)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", default=None,
-                   help="default: <dev_dir>/inverse/<job_dir>/figure_<task>_passes_<..>.png")
+                   help="default: <dev_dir>/inverse/<job_dir>/figure_<task>_<level>_passes_<..>.png")
     args = p.parse_args()
 
     device = "cuda"
@@ -111,10 +122,12 @@ def main():
     null = torch.full((clean.shape[0],), model.num_classes, device=device)
     metrics = ri.Metrics(device)
 
-    level, mu = TASKS[args.task]
-    op = ri.Operator(args.task, level, cfg.image_size, device)
+    level, mu, noise, passes = TASKS[args.task]
+    level = level if args.level is None else args.level
+    mu = mu if args.mu is None else args.mu
+    passes = sorted(passes if args.passes is None else args.passes)
+    op = ri.Operator(args.task, level, cfg.image_size, device, noise, "patchy")
     y = op.degrade(clean, torch.Generator().manual_seed(args.seed))
-    passes = sorted(args.passes)
 
     def run(m):
         """{k: result after k passes} for every k in passes"""
@@ -127,6 +140,10 @@ def main():
 
     loop, anchored = run(0.0), run(mu)
     methods = [("Degraded", y)]
+    if op.undo(y) is not None:
+        # the known degradation inverted with no model
+        what = "haze" if args.task == "dehaze" else "exposure"
+        methods += [(f"Undo {what}|(no model)", op.undo(y))]
     methods += [(f"Loop, {plural(k)}|(no anchor)", loop[k]) for k in passes]
     methods += [(f"Anchored, {plural(k)}|(data weight {mu:g})", anchored[k])
                 for k in passes]
@@ -138,10 +155,15 @@ def main():
     title = {
         "denoise": f"Denoising (noise std {level:g})",
         "deblur": f"Deblurring (Gaussian blur std {level:g}px)",
+        "dehaze": f"Dehazing (patchy haze, densest patch keeps {level:.0%} "
+                  f"of the image, + noise {noise:g})",
+        "underexpose": f"Too dark (exposure x{level:g}, + noise {noise:g})",
+        "overexpose": f"Too bright (exposure x{level:g}, highlights clipped, "
+                      f"+ noise {noise:g})",
     }[args.task]
     out = args.out or osp.join(
         args.dev_dir, "inverse", args.job_dir,
-        f"figure_{args.task}_passes_{'-'.join(map(str, passes))}.png",
+        f"figure_{args.task}_{level:g}_passes_{'-'.join(map(str, passes))}.png",
     )
     draw_figure(title, cols, names, args.tile).save(out)
     print(f"saved {out}")

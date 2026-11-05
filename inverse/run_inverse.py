@@ -15,8 +15,9 @@ encode -> noise -> decode loop). blur is a circular convolution so the prox
 is solved exactly in the fourier domain.
 
 every config is scored (psnr, ssim, lpips) against the clean image at the
-steps in --eval_steps, next to two references: the degraded input, and the
-clean image passed once through the model (the reconstruction ceiling).
+steps in --eval_steps, next to references: the degraded input, the clean
+image passed once through the model (the reconstruction ceiling) and, for
+haze and exposure, the known degradation undone with no model.
 
 usage (single gpu, no torchrun):
     export HF_TOKEN_PATH=/path/to/hf/token  # dinov3 is a gated repo
@@ -56,12 +57,20 @@ logger = logging.getLogger("inverse")
 # degradation strengths per task:
 #   denoise: std of additive gaussian noise, on the [0, 1] pixel scale
 #   deblur:  std (pixels, at the model resolution) of a gaussian blur kernel
-#   dehaze:  transmission t of homogeneous haze, I = J t + A (1 - t)
+#   dehaze:  transmission t in the densest haze, I = J t + A (1 - t). with
+#            --haze_map patchy, t varies smoothly per image between this
+#            level and 1 (clear); uniform uses t = level everywhere
+#   underexpose: exposure factor k < 1, y = k x (too dark)
+#   overexpose:  exposure factor k > 1, y = min(k x, 1) (too bright, with
+#                the highlights clipped to white)
 DEFAULT_LEVELS = {
     "denoise": [0.1, 0.2, 0.3],
     "deblur": [2.0, 4.0, 8.0],
     "dehaze": [0.7, 0.5, 0.3],
+    "underexpose": [0.15, 0.1, 0.05],
+    "overexpose": [2.0, 3.0, 4.0],
 }
+EXPOSURE_TASKS = ("underexpose", "overexpose")
 DEFAULT_SCHEDULES = ["0", "10x20", "20x20", "30x20"]
 HAZE_AIRLIGHT = 0.9
 
@@ -105,12 +114,16 @@ class Operator:
     """y = A(x) + n, with the exact data prox
     argmin_x mu ||A x - y||^2 + ||x - z||^2"""
 
-    def __init__(self, task, level, image_size, device, meas_noise=0.0):
-        self.task, self.level = task, level
+    def __init__(self, task, level, image_size, device, meas_noise=0.0,
+                 haze_map="uniform"):
+        self.task, self.level, self.haze_map = task, level, haze_map
         # denoise: the level is the noise std; other tasks: optional extra noise
         self.noise = level if task == "denoise" else meas_noise
         if task == "deblur":
             self.otf = gaussian_otf(level, image_size, device)
+        # haze transmission: a scalar, or a [B, 1, H, W] map drawn per batch in
+        # degrade() (so forward/adjoint/prox act on the last degraded batch)
+        self.t = level
 
     def forward(self, x):
         if self.task == "denoise":
@@ -118,7 +131,11 @@ class Operator:
         if self.task == "deblur":
             return torch.fft.ifft2(torch.fft.fft2(x) * self.otf).real
         if self.task == "dehaze":
-            return x * self.level + HAZE_AIRLIGHT * (1 - self.level)
+            return x * self.t + HAZE_AIRLIGHT * (1 - self.t)
+        if self.task == "underexpose":
+            return x * self.level
+        if self.task == "overexpose":
+            return (x * self.level).clamp(max=1)
         raise ValueError(self.task)
 
     def adjoint(self, r):
@@ -127,12 +144,27 @@ class Operator:
         if self.task == "deblur":
             return torch.fft.ifft2(torch.fft.fft2(r) * self.otf.conj()).real
         if self.task == "dehaze":
+            return r * self.t
+        if self.task in EXPOSURE_TASKS:
             return r * self.level
         raise ValueError(self.task)
 
+    def undo(self, y):
+        """invert the known degradation with no model (the do-nothing-smart
+        baseline), or None when there is no closed form"""
+        if self.task == "dehaze":
+            return ((y - HAZE_AIRLIGHT * (1 - self.t)) / self.t).clamp(0, 1)
+        if self.task in EXPOSURE_TASKS:
+            return (y / self.level).clamp(0, 1)
+        return None
+
     def init(self, y, mode):
         """starting point x_0: the measurement, or A^T y (paper's choice for
-        denoising and deblurring; for haze A^T y only scales y down)"""
+        denoising and deblurring). haze starts from y (A^T y only scales it
+        down); exposure starts from the undone exposure, since A^T y would make
+        a dark image darker"""
+        if mode == "adjoint" and self.task in EXPOSURE_TASKS:
+            return self.undo(y)
         if mode == "adjoint" and self.task != "dehaze":
             return self.adjoint(y).clamp(0, 1)
         return y
@@ -147,12 +179,33 @@ class Operator:
             den = mu * self.otf.abs() ** 2 + 1
             return torch.fft.ifft2(num / den).real
         if self.task == "dehaze":
-            t, c = self.level, HAZE_AIRLIGHT * (1 - self.level)
+            t, c = self.t, HAZE_AIRLIGHT * (1 - self.t)
             return (mu * t * (y - c) + z) / (mu * t * t + 1)
+        k = self.level
+        linear = (mu * k * y + z) / (mu * k * k + 1)
+        if self.task == "underexpose":
+            return linear
+        if self.task == "overexpose":
+            # clipped pixels only say k x >= 1: keep z if it already is that
+            # bright, else pull it up to the clipping point. unclipped pixels
+            # use the linear anchor
+            up = torch.where(z * k >= 1, z, (mu * k + z) / (mu * k * k + 1))
+            return torch.where(y >= 1, up, linear)
         raise ValueError(self.task)
 
     def degrade(self, x, generator):
-        y = self.forward(x)
+        if self.task == "dehaze" and self.haze_map == "patchy":
+            # smooth random field in [0, 1] per image -> t in [level, 1]
+            B, _, H, W = x.shape
+            u = torch.randn((B, 1, 4, 4), generator=generator, device="cpu")
+            u = F.interpolate(u.to(x.device), size=(H, W), mode="bicubic",
+                              align_corners=True)
+            lo = u.amin(dim=(2, 3), keepdim=True)
+            hi = u.amax(dim=(2, 3), keepdim=True)
+            u = (u - lo) / (hi - lo)
+            self.t = self.level + (1 - self.level) * u
+        # overexposure saturates after the sensor noise, so clip at the end
+        y = x * self.level if self.task == "overexpose" else self.forward(x)
         if self.noise > 0:
             n = torch.randn(x.shape, generator=generator, device="cpu")
             y = y + self.noise * n.to(x.device)
@@ -301,6 +354,8 @@ def get_args():
                    help="override the levels of every task in --tasks")
     p.add_argument("--meas_noise", type=float, default=0.0,
                    help="extra gaussian measurement noise for deblur/dehaze")
+    p.add_argument("--haze_map", choices=["uniform", "patchy"], default="patchy",
+                   help="dehaze: one transmission everywhere, or a smooth random map")
     p.add_argument("--schedules", nargs="+", default=DEFAULT_SCHEDULES)
     p.add_argument("--mus", nargs="+", type=float, default=[0.0, 1.0],
                    help="data-prox weights; 0 = no data consistency")
@@ -364,7 +419,8 @@ def main():
 
     for task in args.tasks:
         for level in args.levels or DEFAULT_LEVELS[task]:
-            op = Operator(task, level, cfg.image_size, device, args.meas_noise)
+            op = Operator(task, level, cfg.image_size, device, args.meas_noise,
+                          args.haze_map)
             gen = torch.Generator().manual_seed(args.seed)
             grid_cols = defaultdict(list)
             t0 = time.time()
@@ -378,6 +434,8 @@ def main():
                 torch.manual_seed(args.seed * 100003 + b0)
                 ceiling = project(model, x, yb, 0.0, ptdtype)
                 outs = [("degraded", 0, y), ("clean-recon", 1, ceiling)]
+                if op.undo(y) is not None:
+                    outs.append(("undo-no-model", 1, op.undo(y)))
                 for sched, mu in configs:
                     # same rotation noise for every config of a batch
                     torch.manual_seed(args.seed * 100003 + b0)
@@ -395,17 +453,19 @@ def main():
                     grid_cols[col] += list(xr[:in_grid].cpu())
                 grid_cols["clean"] += list(x[:in_grid].cpu())
 
-            cols = ["clean", "degraded", "clean-recon"] + [
+            refs = ["clean", "degraded", "clean-recon", "undo-no-model"]
+            cols = [c for c in refs if c in grid_cols] + [
                 f"{s}|mu={mu:g}" for s, mu in configs
             ]
             tag = f"{task}_{level:g}"
-            save_grid(
-                [[grid_cols[c][i] for c in cols] for i in range(n_grid)],
-                osp.join(out_dir, "grids", f"{tag}.png"), args.grid_tile,
-                args.grid_mode,
-            )
-            with open(osp.join(out_dir, "grids", f"{tag}_columns.txt"), "w") as f:
-                f.write("\n".join(cols) + "\n")
+            if n_grid > 0:
+                save_grid(
+                    [[grid_cols[c][i] for c in cols] for i in range(n_grid)],
+                    osp.join(out_dir, "grids", f"{tag}.png"), args.grid_tile,
+                    args.grid_mode,
+                )
+                with open(osp.join(out_dir, "grids", f"{tag}_columns.txt"), "w") as f:
+                    f.write("\n".join(cols) + "\n")
 
             # final step of every config of this level -> lowest mean lpips
             final = {}
