@@ -1,0 +1,97 @@
+{
+  "steps": 6,
+  "angle": 85.0,
+  "grid": 16,
+  "examples": [
+    {
+      "i": 1,
+      "A": "lion",
+      "B": "zebra",
+      "fg_cov": 0.369598388671875,
+      "bg_psnr": {
+        "uncontrolled": 8.504359651920366,
+        "pixel": 35.755326457109796,
+        "latent": 17.71530836323391
+      },
+      "fg_psnr": {
+        "uncontrolled": 10.514880009685223,
+        "pixel": 8.796158360283457,
+        "latent": 10.076287362617993
+      },
+      "rt_content_cos_latent": 0.7143415808677673,
+      "cmp": "img/tier1_cmp_ex1_lion_zebra.png"
+    },
+    {
+      "i": 2,
+      "A": "golden",
+      "B": "tabbycat",
+      "fg_cov": 0.459564208984375,
+      "bg_psnr": {
+        "uncontrolled": 12.526864538008635,
+        "pixel": 37.65992288607969,
+        "latent": 14.51711120544543
+      },
+      "fg_psnr": {
+        "uncontrolled": 11.546642585193883,
+        "pixel": 8.527006131126853,
+        "latent": 13.211946732749215
+      },
+      "rt_content_cos_latent": 0.8485537171363831,
+      "cmp": "img/tier1_cmp_ex2_golden_tabbycat.png"
+    },
+    {
+      "i": 3,
+      "A": "panda",
+      "B": "flamingo",
+      "fg_cov": 0.369537353515625,
+      "bg_psnr": {
+        "uncontrolled": 9.485816750191923,
+        "pixel": 34.936242677803044,
+        "latent": 13.381214471311793
+      },
+      "fg_psnr": {
+        "uncontrolled": 6.976518682125477,
+        "pixel": 7.330541540453897,
+        "latent": 9.825335221385837
+      },
+      "rt_content_cos_latent": 0.8556638360023499,
+      "cmp": "img/tier1_cmp_ex3_panda_flamingo.png"
+    },
+    {
+      "i": 4,
+      "A": "penguin",
+      "B": "redfox",
+      "fg_cov": 0.181793212890625,
+      "bg_psnr": {
+        "uncontrolled": 10.450625960956799,
+        "pixel": 42.106447952619384,
+        "latent": 13.45949216937711
+      },
+      "fg_psnr": {
+        "uncontrolled": 6.659726479475941,
+        "pixel": 7.295136838618339,
+        "latent": 13.098802911384904
+      },
+      "rt_content_cos_latent": 0.8817400336265564,
+      "cmp": "img/tier1_cmp_ex4_penguin_redfox.png"
+    },
+    {
+      "i": 5,
+      "A": "peacock",
+      "B": "husky",
+      "fg_cov": 0.0445404052734375,
+      "bg_psnr": {
+        "uncontrolled": 11.425036152064392,
+        "pixel": 35.07906269523548,
+        "latent": 15.402177916456258
+      },
+      "fg_psnr": {
+        "uncontrolled": 8.551754387124916,
+        "pixel": 9.87753698009121,
+        "latent": 9.631603539909156
+      },
+      "rt_content_cos_latent": 0.8295403718948364,
+      "cmp": "img/tier1_cmp_ex5_peacock_husky.png"
+    }
+  ]
+}
