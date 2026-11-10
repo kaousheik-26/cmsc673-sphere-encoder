@@ -113,3 +113,27 @@ def project_points(pw, K, w2c):
     z = pc[:, 2]
     uv = pc[:, :2] / z.clamp_min(1e-8)[:, None] * torch.stack([K[0, 0], K[1, 1]]) + torch.stack([K[0, 2], K[1, 2]])
     return uv, z
+
+
+def camera_scale(w2c_ref, all_w2cs=None, mode="all_views", bound=2.0):
+    """Translation scale for cameras expressed relative to the reference (source) camera.
+    all_views: camera centres of ALL views of the object span [-bound, bound]^3 (depends on
+               which other views exist: 12 random views, 64 random views and a 32-camera ring
+               give different scales for the same camera pair).
+    src_dist : the source camera sits at distance 1 from the object centre (world origin);
+               uses only what a one-photo user knows, identical across datasets."""
+    if mode == "src_dist":
+        return 1.0 / max(np.linalg.norm(np.linalg.inv(w2c_ref)[:3, 3]), 1e-6)
+    T0 = np.linalg.inv(w2c_ref)
+    every = np.stack([w @ T0 for w in all_w2cs])
+    centres = np.stack([-r[:3, :3].T @ r[:3, 3] for r in every])
+    return bound / max(np.abs(centres).max(), 1e-6)
+
+
+def normalise_cameras(w2cs, ref, all_w2cs=None, bound=2.0, mode="all_views"):
+    """w2cs [V,4,4] -> relative to w2cs[ref] (identity), translations scaled by camera_scale."""
+    T0 = np.linalg.inv(w2cs[ref])
+    rel = np.stack([w @ T0 for w in w2cs])
+    s = camera_scale(w2cs[ref], w2cs if all_w2cs is None else all_w2cs, mode, bound)
+    rel[:, :3, 3] *= s
+    return rel, s
