@@ -80,6 +80,47 @@
 </header>
 
 <section>
+  <div style="margin-bottom:10px"><span class="tag" style="background:#1f7a3d;color:#fff">result</span>
+    <span class="tag">trained on 20 lion images · one class</span>
+    <span class="tag">mask-free at inference</span></div>
+  <h2>Fixing the prior through A→B→A — mask-free</h2>
+  <h3>A learned per-token gate recovers the prior without any segmentation at test time</h3>
+  <p class="lead">The scene gets repainted on A→B because <b>two</b> operations are global: the noise
+  injection and the class conditioning, both applied to every latent token. The fix: a tiny gate
+  <code>g(z)</code> read from the <em>clean</em> latent predicts the subject per token, and drives both
+  spatially — background tokens keep the clean scene and get null conditioning; only the subject is
+  noised and re-classed. It is trained (66K params, encoder+decoder frozen) on just <b>20 lion
+  images</b>, mask-supervised, but uses <b>no mask at inference</b> — the gate is predicted from the latent.</p>
+  <div class="cols">
+    <div class="stat"><div class="n" style="color:var(--good)">0.73</div><div class="l">round-trip content-cos, <b>learned mask</b> (mask-free)</div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">0.29</div><div class="l">baseline <code>edit()</code></div></div>
+    <div class="stat"><div class="n">0.83</div><div class="l">Tier 1 upper bound (real rembg mask)</div></div>
+    <div class="stat"><div class="n">20</div><div class="l">training images, single class</div></div>
+  </div>
+  <figure><img src="img/fix_before_after.png" alt="before vs after training round-trip comparison"></figure>
+  <figcaption><b>Before vs after training the gate.</b> On two held-out lions, the <span style="color:var(--bad)">baseline</span> A→B→A round trip drifts to a different scene — even a different animal (leopards, bottom) — while <span style="color:var(--good)">after training</span> on 20 lions the original lion and background return. Mask-free: the learned gate (far right) is predicted from the latent. Round-trip content-cos 0.17→0.77 and 0.19→0.64.</figcaption>
+  <figure style="margin-top:14px"><img src="img/fix_tier6_lion.png" alt="learned mask lion round trip"></figure>
+  <figcaption>Panels: <b>original · base→zebra · base→zebra→lion · learned→zebra · learned→zebra→lion ·
+  gate map</b>. The learned gate (last panel) is a clean lion silhouette — found from the latent, no
+  mask. The A→B→A trip keeps the original rock+grass scene and returns a lion; the base model drifts to
+  a new scene (panel 3). Gate loss fell 0.52→0.07 over training.</figcaption>
+  <figure style="margin-top:14px"><img src="img/fix_tier6_im2.png" alt="learned mask held-out lion"></figure>
+  <figcaption>A second held-out lion — same behaviour (content-cos 0.17→0.77).</figcaption>
+  <h3 style="margin-top:20px">How we got here</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr style="text-align:left;border-bottom:1px solid var(--line)"><th>approach</th><th>mask?</th><th>round-trip cos</th><th>note</th></tr>
+    <tr><td>baseline</td><td>—</td><td>0.24</td><td>prior drifts, scene repainted</td></tr>
+    <tr><td>Tier 1 · latent token-masking</td><td>yes</td><td>0.83</td><td>works, needs a mask</td></tr>
+    <tr><td>Tier 3 · cycle-consistency LoRA</td><td>no</td><td>0.36</td><td>under-edits (cheats)</td></tr>
+    <tr><td>Tier 4 · cycle + fg-distillation LoRA</td><td>no</td><td>0.35</td><td>honest edits, plateaus</td></tr>
+    <tr><td>Tier 5 · spatial-conditioning gate</td><td>no</td><td>0.25</td><td>failed — gate read the noised latent</td></tr>
+    <tr style="font-weight:700;color:var(--good)"><td>Tier 6 · learned latent-masking</td><td>no</td><td>0.73</td><td>the fix</td></tr>
+  </table>
+  <figcaption>Tier 5 failed because the gate read the 85°-noised latent (≈pure noise) and because gating
+  conditioning alone leaves the global <em>noise</em> untouched; Tier 6 fixes both.</figcaption>
+</section>
+
+<section>
   <h2>Segmentation-controlled round trip</h2>
   <h3>Anchor the background, and the prior stops drifting</h3>
   <p class="lead">A foreground mask (U²-Net) separates the main figure from the background. During the
