@@ -36,8 +36,15 @@ class Run:
     def __init__(self, experiment: str, config: dict, dev_dir="workspace", ckpt_path="", seeds=None, repo_dir="."):
         sha = _git("rev-parse", "--short", "HEAD", cwd=repo_dir) or "nogit"
         stamp = time.strftime("%Y%m%d-%H%M%S")
-        self.dir = osp.join(dev_dir, "runs", experiment, f"{stamp}-{sha}")
-        os.makedirs(self.dir, exist_ok=True)
+        base = osp.join(dev_dir, "runs", experiment, f"{stamp}-{sha}")
+        self.dir, k = base, 0
+        while True:
+            try:
+                os.makedirs(self.dir)
+                break
+            except FileExistsError:
+                k += 1
+                self.dir = f"{base}-{k}"
         diff = _git("diff", "HEAD", cwd=repo_dir)
         untracked = _git("ls-files", "--others", "--exclude-standard", cwd=repo_dir)
         if diff:
