@@ -21,7 +21,7 @@ Two versions of the loop are compared:
 
 For haze and overexposure we also report **undo, no model**: the known damage reversed by formula, with no model at all.
 
-Open [`index.html`](index.html) in a browser for a page with these results, charts and figures, with one tab per approach.
+For a page with these results, charts and figures (one tab per approach), run `python inverse/serve.py` and open http://localhost:8000.
 
 ## The damage
 
@@ -148,9 +148,39 @@ To fix an image, subtract α times the direction (scaled to the latent's length)
 - **Haze:** the haze is visibly removed and LPIPS is the best of all methods, but PSNR is far below the anchored loop, because brightness and colors don't match the original exactly.
 - **Blur:** the result looks sharp but isn't the right image. PSNR falls below the blurred input and colors shift. The anchored loop is clearly better.
 - **The subtraction always helps** compared with encoding and decoding the damaged image unchanged.
-- **Limitation:** the direction depends on the damage type and its strength, so both must be known. A clean version of the image being fixed isn't needed.
+- **What must be known:** the damage type. The strength doesn't have to be (next section), and a clean version of the image being fixed isn't needed.
 
 ![one-step latent fix](figures/direct_fix.jpg)
+
+### When the strength is unknown
+
+Here every image gets its own random strength, drawn uniformly over the range tested above, and the fix is told only the damage type. The fix is the same (encode, subtract the direction once with α = 1, decode), with one of these directions:
+
+- **Random-strength direction:** one per damage type, the average shift over 64 training images damaged at random strengths. It needs no strength.
+- **Heaviest-strength direction:** the direction from the section above, used for every image.
+- **Exact strength (oracle):** a direction built at each image's true strength. This is the best case, which needs the strength.
+
+| Damage, random strength | Damaged | No fix | Random-strength direction | Heaviest-strength direction | Exact strength (oracle) |
+| --- | --- | --- | --- | --- | --- |
+| Blur, 2 to 12px | 23.5 / 0.511 | 19.5 / 0.338 | **19.8 / 0.299** | 19.3 / 0.299 | 19.9 / 0.288 |
+| Noise, std 0.1 to 0.5 | 13.1 / 1.195 | 19.1 / 0.307 | 20.0 / 0.274 | **20.1 / 0.272** | 20.0 / 0.272 |
+| Haze, densest patch 10% to 50% | 13.6 / 0.306 | 20.0 / 0.227 | 20.6 / 0.213 | **20.6 / 0.212** | 20.6 / 0.214 |
+| Too bright, ×1.5 to ×4 | 9.5 / 0.392 | 19.1 / 0.274 | 19.7 / 0.266 | **19.8 / 0.263** | 19.8 / 0.264 |
+
+| Blur, split by strength | Damaged | No fix | Random-strength direction | Heaviest-strength direction | Exact strength (oracle) |
+| --- | --- | --- | --- | --- | --- |
+| Mild (2 to 4.8px) | 26.1 / 0.391 | 21.4 / 0.219 | **21.1 / 0.216** | 20.2 / 0.238 | 21.5 / 0.214 |
+| Medium (4.9 to 8.8px) | 22.6 / 0.545 | 19.2 / 0.342 | **19.5 / 0.295** | 19.0 / 0.300 | 19.6 / 0.289 |
+| Heavy (8.9 to 12px) | 21.7 / 0.599 | 17.9 / 0.452 | 18.6 / 0.388 | **18.6 / 0.359** | 18.7 / 0.361 |
+
+96 validation images, PSNR / LPIPS. Bold: the best of the columns that don't need the strength.
+
+- **The strength doesn't need to be known.** The random-strength direction gets almost all of the benefit of the exact-strength direction, for every damage type.
+- **Noise, haze and too bright:** the strength barely matters. All three directions are within about 0.1 dB and 0.003 LPIPS of each other at every strength.
+- **Blur is the one case where it matters.** The heaviest-strength direction makes mild blur worse than no fix, oversharpening and oversaturating it. The random-strength direction avoids this and is close to the oracle on medium and heavy blur.
+- The damage type still has to be known.
+
+![blur at random strengths](figures/random_deblur.jpg)
 
 ## Setup
 
@@ -195,6 +225,8 @@ for t in deblur denoise dehaze overexpose; do python inverse/make_figure.py --ta
 
 # one-step latent fix: numbers and figure (writes to <workspace>/inverse/<checkpoint>/latent/)
 python inverse/shift_direct.py
+# the same at random strengths (per-image csv, summary json, a figure per damage type)
+python inverse/shift_random.py
 
 # tables above + the data blocks of index.html
 python inverse/summarize.py
@@ -209,8 +241,10 @@ python inverse/summarize.py
 | `run_inverse.py` | damage models, the restoration loop with the anchor, metrics, sweeps |
 | `make_figure.py` | the labeled figures above |
 | `shift_direct.py` | the one-step latent fix |
+| `shift_random.py` | the one-step latent fix when each image has a random, unknown strength |
 | `latent_analysis.py` | how far and in which direction each damage moves the latent (and figures of it) |
 | `latent_shift.py` | the damage direction subtracted inside the restoration loop. Also holds helpers `shift_direct.py` uses |
 | `summarize.py` | the tables above, and the data blocks of `index.html` |
 | `index.html` | results page, with a tab per approach |
+| `serve.py` | serves the results page locally |
 | `figures/` | the figures above (JPEG copies of the full-size PNGs) |

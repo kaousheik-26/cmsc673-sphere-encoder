@@ -6,6 +6,7 @@ reads, under <dev_dir>/inverse/<job_dir>/:
     analysis/<task>/summary.csv   32 val images, every strength (the curves)
     <figure run>/summary.csv      the 10 val images shown in each figure
     latent/direct_summary.json    the one-step latent fix (shift_direct.py)
+    latent/random_strength.json   the same fix at random strengths (shift_random.py)
 
 usage:
     python inverse/summarize.py
@@ -136,10 +137,23 @@ def main():
               f"{fmt(r['decode_without_subtraction'])} | {fmt(r['decode_with_subtraction'])} "
               f"(alpha {r['alpha']:g}) | {fmt(loop)} |")
 
+    # the one-step fix at random strengths, per direction
+    with open(osp.join(root, "latent", "random_strength.json")) as f:
+        rnd = json.load(f)
+    print("\n### One-step latent fix at random strengths, 96 val images\n")
+    print("| Damage | Damaged | No fix | Random-strength direction | Heaviest-strength direction "
+          "| Exact strength (oracle) |")
+    print("| --- | --- | --- | --- | --- | --- |")
+    for t in data:
+        r = rnd[t["id"]]
+        g = r["groups"]["all"]
+        print(f"| {t['name']}, {r['range'][0]} to {r['range'][1]} | "
+              + " | ".join(fmt(g[k]) for k in ["damaged", "none", "random", "heaviest", "exact"]) + " |")
+
     # write the data blocks of the website
     with open(args.html) as f:
         html = f.read()
-    for block_id, payload in [("results", data), ("direct", direct)]:
+    for block_id, payload in [("results", data), ("direct", direct), ("random", rnd)]:
         block = json.dumps(payload, separators=(",", ":"))
         html, n = re.subn(
             rf'(<script id="{block_id}" type="application/json">).*?(</script>)',
