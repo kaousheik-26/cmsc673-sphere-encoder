@@ -3,6 +3,7 @@
 Adaptive latent edits, direct probes, binary sky-mask controls, and measured-depth evaluation.
 
 - [Findings](FOLLOWUP_FINDINGS.md)
+- [Five visual results and captions](assets/README.md)
 - [Protocol](FOLLOWUP_PROTOCOL.md)
 - [Metrics](FOLLOWUP_METRICS.csv)
 - [Original run environment and source hashes](FOLLOWUP_ENVIRONMENT.json)

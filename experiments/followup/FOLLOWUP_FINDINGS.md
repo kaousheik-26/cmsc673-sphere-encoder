@@ -4,6 +4,8 @@
 
 The main new positive result is binary sky-mask extraction. Increasing edit complexity did not consistently improve depth transfer, and the independent measured-depth check limits the generality of the original depth result.
 
+See the [five visual results](assets/README.md) for qualitative successes, failure cases, and aggregate comparison charts. The [original figures](../intrinsics/assets/README.md) remain available without duplication.
+
 ## Data and selection
 
 The fresh ImageNet21k split retains 72 training and 24 validation images, with 96 new images from familiar categories and 96 images from 12 new categories. All 192 fresh evaluation paths and exact crops are disjoint from the original 144 images. Near duplicates and overlap with encoder pretraining were not audited.
