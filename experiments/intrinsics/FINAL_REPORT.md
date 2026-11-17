@@ -1,5 +1,9 @@
 # Frozen Sphere Encoder intrinsic-property experiments
 
+> **Expanded study:** [Follow-up findings](../followup/FOLLOWUP_FINDINGS.md) add 66 training
+> runs, fresh evaluation images, binary sky masks, and independent measured-depth
+> checks. The results below describe the original 144-image property suite.
+
 ## Outcome
 
 **The planned depth, normal, and semantic-segmentation experiments are

@@ -5,13 +5,15 @@ segmentation from frozen Sphere Encoder latents. The encoder and decoder stay
 fixed; training learns a shared latent direction and movement size, comparing
 geodesic movement with addition followed by normalization.
 
-The completed study found promising shared depth transformations, modest normal
-improvements, and no reliable shared segmentation edit. Geodesic movement did
-not consistently outperform normalized addition. Evaluation measures agreement
-with teacher-model predictions, rather than ground-truth accuracy.
+Shared edits extract approximate depth and binary sky masks on the source image
+distribution. Normal improvements are modest, 150-class segmentation remains
+unsuccessful, and category/domain transfer is limited. Geodesic movement did not
+consistently outperform normalized addition. Most evaluations use teacher labels;
+the follow-up also checks relative depth against measured DIODE data.
 
 ## Results
 
+- [Follow-up findings](../followup/FOLLOWUP_FINDINGS.md): 66 training runs, fresh-image audits, and measured-depth evaluation.
 - [Final report](FINAL_REPORT.md): findings, evaluation protocol, and limitations.
 - [Depth feasibility results](DEPTH_RESULTS.md): reconstruction of supplied depth targets.
 - [Detailed depth evaluation](SHARED_DEPTH_RESULTS.md): experimental setup and controls.

@@ -1,0 +1,42 @@
+{
+  "python": "3.12.14",
+  "packages": {
+    "torch": "2.14.1",
+    "torchvision": "0.29.1",
+    "transformers": "5.19.0",
+    "timm": "1.0.30",
+    "einops": "0.8.2",
+    "numpy": "2.5.3",
+    "pillow": "12.3.0",
+    "diffusers": "0.41.0",
+    "accelerate": "1.15.0",
+    "huggingface-hub": "1.33.0"
+  },
+  "source_sha256": {
+    "segmentation_probe.py": "926b0008ea536d29fb49aeba43d0beb4eeaa795e223b0eedbb337f54310416f4",
+    "test_shared_transform.py": "7b806f03c82208d921e37a55614c72981d76235d7ef5b7ecd68b83946bc71578",
+    "traverse.py": "91afb2950a40ef8fb934684c9aa488b93f08214d495b274f2e670b79ca34bd1e",
+    "geometry.py": "04b87e5e6a62f40c2c282207828b69cd8a157f55ce120c5c9c7a27222e6bf233",
+    "depth_feasibility.py": "73355e9b3149be87f4b53d7d8f02bb6f344626e1af3830ce10dd41a9ec3aaa82",
+    "test_geometry.py": "73b711f772fff0106806744bebdab48b7c06fdc469f0968680a8d1b32fc09a8e",
+    "prepare_binary_followup.py": "e6562bfd4cf54eae5d29db85f0a8dadb4a18e032485286e34d9486123b0cd19e",
+    "audit_controls.py": "af2707cbc1cb5c9ddc10a5d691d339e68349b2dc6a2f6b95cb97b3a3fcda6a4a",
+    "test_property_metrics.py": "27a4a18a828ab0476819ffcb18036beab5cfbdaf58db57136cd8acbe583670d0",
+    "complete_properties.py": "7743473e91a5126c39e90db807373f11b009eccb6eb5b4f0c1576fe94e34866d",
+    "test_depth_feasibility.py": "ff54643d42b0c2fce3f4c4395d4950d115deb1fa0340b194ee7b75bffcebb0d8",
+    "binary_controls.py": "ec6a2245e3beaae406aec0e4743207e44ad47642756dcfb54a28214a91ab698d",
+    "run_followup_task.py": "691f7180fc20fc4d8e0de0d74f735719a5f563ac55d51e77170d69721778751a",
+    "property_metrics.py": "ceca196dd85079ce47a258889b55ad5614ec3e9e89b93736ad2e65ff51256654",
+    "categorical_segmentation.py": "6e0ec00dc5ea83d90221a323b854a22d766dc918144c88f4b440cb71124d653b",
+    "test_adaptive_transform.py": "c7e03af4f795d588b80f77862deeae5f0994c134aa1635149beaece6e8aab469",
+    "prepare_followup_pairs.py": "5a8b90ef28971e7840513022d43659b774915b217e257d8bd611cce1756fb7e7",
+    "__init__.py": "9d60cf54635e3b989395e677e463b55182baf879704a7130e924164e87b9ad36",
+    "train_shared_depth.py": "aee4ae54464367c675bbdf94bbaf2f1100b574db096eddfb5a4513b40f688c4e",
+    "compare_adaptive.py": "5def8f113186171dd48b36f2a87f3a6ef27070ed713727d1d4f5c16084be158b",
+    "adaptive_transform.py": "b83ae425242ca79dab87da1e883c10387593dd05afcb976bb5cb81e7c86ecceb",
+    "diode_teacher_control.py": "8197273f07ca53bd541a7619437b3e3344efc7fd16f5e2579b8392502303007c",
+    "summarize_followup.py": "42ae1020bf9e9cf786fe2d1085ec26efad66150bf6df47788c7201aa48cee697",
+    "shared_transform.py": "5cd9e9dca611b3a77b122faac992616f03fc38db29410991345f1026fee7f118",
+    "evaluate_diode.py": "5bd827281646c405b464e01f28222b56247eaf79b86473c143abdbc7f8bc7453"
+  }
+}
