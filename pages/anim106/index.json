@@ -1,0 +1,6 @@
+[
+ {"title": "From 10 M to 106 M parameters", "file": "Grow106.mp4", "caption": "Same design, scaled up: 4 blocks of width 384 become 11 blocks of width 768 (9.45 M parameters each). Training-clip error falls from 6.0&deg; to 1.7&deg;; new-clip error does not move (21.3&deg; to 21.9&deg;). <a href=\"anim106/Grow106.gif\">GIF</a>"},
+ {"title": "The only objective: 1 minus the cosine", "file": "Objective.mp4", "caption": "The loss is 1 minus the cosine of the angle between guess and truth on the sphere. Small misses cost almost nothing (about angle squared over 2), and it is one number, so it never says whether the miss was distance or direction. <a href=\"anim106/Objective.gif\">GIF</a>"},
+ {"title": "106 M while training", "file": "Curve106.mp4", "caption": "Real training log. New-clip error is lowest at step 1000 (17.1&deg;, still worse than freeze at 13.6&deg;) and then rises to 21.9&deg; while training-clip error keeps falling to 1.7&deg;. <a href=\"anim106/Curve106.gif\">GIF</a>"},
+ {"title": "How the head turns an arrow into a frame", "file": "WalkOnSphere.mp4", "caption": "The head's arrow lies flat on the sphere at the first frame; the guess is where you land after walking that far along the surface. The error is the angle to the true frame. (The orange ring at the end is RotNet's idea, shown for reference.)"}
+]
