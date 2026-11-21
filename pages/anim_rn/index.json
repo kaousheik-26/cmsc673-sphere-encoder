@@ -1,0 +1,12 @@
+[
+ {
+  "title": "Two heads, graded separately",
+  "file": "TwoHeads.mp4",
+  "caption": "RotNet outputs a walking distance (orange ring: every point that far from the first frame) and a unit direction (purple arrow), and each gets its own score. The left half shows the single-arrow alternative for contrast. Handing RotNet the true direction leaves only its small distance error. <a href=\"anim_rn/TwoHeads.gif\">GIF</a>"
+ },
+ {
+  "title": "Right distance, wrong direction",
+  "file": "DirectionGap.mp4",
+  "caption": "Even with the distance exactly right, a guess more than 60&deg; off lands further from the truth than not moving at all (freeze). On new clips RotNet's direction is about 82&deg; off; on training clips about 30&deg;. <a href=\"anim_rn/DirectionGap.gif\">GIF</a>"
+ }
+]
